@@ -3,16 +3,22 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
     <OutBaseDir>..\build\</OutBaseDir>
+    <OptionalTarget>-godwhale</OptionalTarget>
   </PropertyGroup>
   <PropertyGroup />
   <ItemDefinitionGroup>
     <ClCompile>
       <PreprocessorDefinitions>_CONSOLE;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <OpenMPSupport>false</OpenMPSupport>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <BuildMacro Include="OutBaseDir">
       <Value>$(OutBaseDir)</Value>
+    </BuildMacro>
+    <BuildMacro Include="OptionalTarget">
+      <Value>$(OptionalTarget)</Value>
     </BuildMacro>
   </ItemGroup>
 </Project>

@@ -5,7 +5,7 @@
     <YaneuraOuCpuTarget>avx2</YaneuraOuCpuTarget>
   </PropertyGroup>
   <PropertyGroup>
-    <TargetName>$(ProjectName)-$(YaneuraOuDbgPrefix)$(YaneuraOuTarget)</TargetName>
+    <TargetName>$(ProjectName)-$(YaneuraOuDbgPrefix)$(YaneuraOuTarget)$(OptionalTarget)</TargetName>
     <IntDir>$(OutDir)obj\$(YaneuraOuDbgPrefix)$(YaneuraOuCpuTarget)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup>
