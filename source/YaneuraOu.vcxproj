@@ -665,9 +665,6 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\child\asio_socket_streambuf.hpp" />
-    <ClInclude Include="..\..\child\godwhale_io.hpp" />
-    <ClInclude Include="..\..\child\version.hpp" />
     <ClInclude Include="bitboard.h" />
     <ClInclude Include="engine\2016-late-engine\2016-late-param.h" />
     <ClInclude Include="engine\2016-late-engine\2016-late-param_body.h" />
@@ -699,6 +696,9 @@
     <ClInclude Include="extra\move_picker\move_picker_2016Q3.h" />
     <ClInclude Include="extra\move_picker\move_picker_2017Q2.h" />
     <ClInclude Include="extra\thread_win32.h" />
+    <ClInclude Include="godwhale\asio_socket_streambuf.hpp" />
+    <ClInclude Include="godwhale\godwhale_io.hpp" />
+    <ClInclude Include="godwhale\version.hpp" />
     <ClInclude Include="learn\half_float.h" />
     <ClInclude Include="learn\learn.h" />
     <ClInclude Include="learn\learning_tools.h" />
@@ -712,7 +712,6 @@
     <ClInclude Include="tt.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\child\godwhale_io.cpp" />
     <ClCompile Include="bitboard.cpp" />
     <ClCompile Include="engine\2016-late-engine\2016-late-search.cpp" />
     <ClCompile Include="engine\2016-mid-engine\2016-mid-search.cpp" />
@@ -754,6 +753,7 @@
     <ClCompile Include="extra\sfen_packer.cpp" />
     <ClCompile Include="extra\test_cmd.cpp" />
     <ClCompile Include="extra\timeman.cpp" />
+    <ClCompile Include="godwhale\godwhale_io.cpp" />
     <ClCompile Include="learn\evaluate_kppt_learn.cpp" />
     <ClCompile Include="learn\learner.cpp" />
     <ClCompile Include="learn\learning_tools.cpp" />

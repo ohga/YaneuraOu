@@ -89,8 +89,8 @@
     <Filter Include="docs">
       <UniqueIdentifier>{8bb34244-8e89-49f6-a303-c043ef5d8647}</UniqueIdentifier>
     </Filter>
-    <Filter Include="リソース ファイル\godwhale">
-      <UniqueIdentifier>{09e868cb-69a0-4eca-aa11-81d1ce99f045}</UniqueIdentifier>
+    <Filter Include="リソース ファイル\extra\godwhale">
+      <UniqueIdentifier>{abe0e212-a533-4c96-93d2-b5daf704ef8b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -220,14 +220,14 @@
     <ClInclude Include="eval\evaluate_io.h">
       <Filter>リソース ファイル\eval</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\child\godwhale_io.hpp">
-      <Filter>リソース ファイル\godwhale</Filter>
+    <ClInclude Include="godwhale\asio_socket_streambuf.hpp">
+      <Filter>リソース ファイル\extra\godwhale</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\child\version.hpp">
-      <Filter>リソース ファイル\godwhale</Filter>
+    <ClInclude Include="godwhale\godwhale_io.hpp">
+      <Filter>リソース ファイル\extra\godwhale</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\child\asio_socket_streambuf.hpp">
-      <Filter>リソース ファイル\godwhale</Filter>
+    <ClInclude Include="godwhale\version.hpp">
+      <Filter>リソース ファイル\extra\godwhale</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -387,8 +387,8 @@
     <ClCompile Include="eval\evaluate.cpp">
       <Filter>リソース ファイル\eval</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\child\godwhale_io.cpp">
-      <Filter>リソース ファイル\godwhale</Filter>
+    <ClCompile Include="godwhale\godwhale_io.cpp">
+      <Filter>リソース ファイル\extra\godwhale</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

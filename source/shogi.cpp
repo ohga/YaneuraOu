@@ -202,7 +202,7 @@ GlobalOptions_ GlobalOptions;
 // ----------------------------------------
 
 #if defined(GODWHALE_CLUSTER_SLAVE)
-#include "../../child/godwhale_io.hpp"
+#include "godwhale/godwhale_io.hpp"
 
 bool IsGodwhaleMode = false;
 
