@@ -622,6 +622,11 @@ struct Position
 	template <MOVE_GEN_TYPE gen_type, bool gen_all>
 	friend struct MoveGenerator;
 
+#if defined (GODWHALE_CLUSTER_SLAVE)
+    // 局面管理用のID
+    int id;
+#endif
+
 private:
 	// StateInfoの初期化(初期化するときに内部的に用いる)
 	void set_state(StateInfo* si) const;

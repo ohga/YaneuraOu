@@ -132,10 +132,15 @@ void ThreadPool::init_for_slave(const Position& pos, const Search::LimitsType& l
 	// このとき、歩の不成などの指し手は除く。(そのほうが勝率が上がるので)
 	// また、goコマンドでsearchmovesが指定されているなら、そこに含まれていないものは除く。
 	for (auto m : MoveList<LEGAL>(pos))
-		if (limits.searchmoves.empty()
-			|| count(limits.searchmoves.begin(), limits.searchmoves.end(), m))
+		if ((limits.searchmoves.empty()
+			 || count(limits.searchmoves.begin(), limits.searchmoves.end(), m))
+#if defined(GODWHALE_CLUSTER_SLAVE)
+            && (limits.ignoremoves.empty()
+                || count(limits.ignoremoves.begin(), limits.ignoremoves.end(), m) == 0)
+#endif
+            )
 			main()->rootMoves.push_back(RootMove(m));
-
+    
 	// おまけでslaveの初期局面も同じにしておいてやる。
 	for (auto th : *this)
 	{

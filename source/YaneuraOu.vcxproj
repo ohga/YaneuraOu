@@ -519,24 +519,39 @@
     <ClCompile>
       <OpenMPSupport>
       </OpenMPSupport>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x600;GODWHALE_CLUSTER_SLAVE;USE_AVX2;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
+      <AdditionalIncludeDirectories>$(BOOST_ROOT)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(BOOST_ROOT)\stage\x64\lib</AdditionalLibraryDirectories>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-mate|x64'">
     <ClCompile>
       <OpenMPSupport>
       </OpenMPSupport>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-user|x64'">
     <ClCompile>
       <OpenMPSupport>
       </OpenMPSupport>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-2017Goku|x64'">
     <ClCompile>
       <OpenMPSupport>
       </OpenMPSupport>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-2017Early|Win32'" />
@@ -547,7 +562,11 @@
     <ClCompile>
       <OpenMPSupport>
       </OpenMPSupport>
+      <AdditionalIncludeDirectories>$(BOOST_ROOT)</AdditionalIncludeDirectories>
     </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(BOOST_ROOT)\stage\x64\lib</AdditionalLibraryDirectories>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-2017Early-sse2|x64'">
     <ClCompile>
@@ -565,7 +584,13 @@
     <ClCompile>
       <OpenMPSupport>
       </OpenMPSupport>
+      <PreprocessorDefinitions>_WIN32_WINNT=0x600;GODWHALE_CLUSTER_SLAVE;USE_SSE42;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(BOOST_ROOT)</AdditionalIncludeDirectories>
     </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(BOOST_ROOT)\stage\x64\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-2017Goku|x64'">
     <ClCompile>
@@ -640,6 +665,9 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\child\asio_socket_streambuf.hpp" />
+    <ClInclude Include="..\..\child\godwhale_io.hpp" />
+    <ClInclude Include="..\..\child\version.hpp" />
     <ClInclude Include="bitboard.h" />
     <ClInclude Include="engine\2016-late-engine\2016-late-param.h" />
     <ClInclude Include="engine\2016-late-engine\2016-late-param_body.h" />
@@ -684,6 +712,7 @@
     <ClInclude Include="tt.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\child\godwhale_io.cpp" />
     <ClCompile Include="bitboard.cpp" />
     <ClCompile Include="engine\2016-late-engine\2016-late-search.cpp" />
     <ClCompile Include="engine\2016-mid-engine\2016-mid-search.cpp" />

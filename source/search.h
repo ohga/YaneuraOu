@@ -65,6 +65,11 @@ namespace Search {
 		// root(探索開始局面)で、探索する指し手集合。特定の指し手を除外したいときにここから省く
 		std::vector<Move> searchmoves;
 
+#if defined(GODWHALE_CLUSTER_SLAVE)
+        // root(探索開始局面)で、探索しない指し手集合。特定の指し手を除外したいときはここに追加
+        std::vector<Move> ignoremoves;
+#endif
+
 		// 残り時間(ms換算で)
 		int time[COLOR_NB];
 

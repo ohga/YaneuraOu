@@ -156,6 +156,9 @@ namespace USI
 			// dのほうが大きければそれをそのまま表示することで回避する。
 
 			ss << "info"
+#if defined(GODWHALE_CLUSTER_SLAVE)
+                << (IsGodwhaleMode ? " id " + std::to_string(pos.id) : "")
+#endif
 				<< " depth " << d
 				<< " seldepth " << max(d, pos.this_thread()->maxPly)
 				<< " score " << USI::score_to_usi(v);
@@ -368,8 +371,8 @@ namespace USI
 					const Option& o = it.second;
 					os << "option name " << it.first << " type " << o.type;
 
-					if (o.type != "button")
-						os << " default " << o.defaultValue;
+                    if (o.type != "button")
+                        os << " default " << o.currentValue;
 
 					// コンボボックス
 					if (o.list.size())
@@ -398,6 +401,22 @@ void is_ready()
 {
 	static bool first = true;
 
+#if defined(GODWHALE_CLUSTER_SLAVE)
+    if (IsGodwhaleMode) {
+        if (first) {
+            // 評価関数の読み込み
+            Eval::load_eval();
+            first = false;
+        }
+
+        // メモリが破壊されていないかを調べるためにチェックサムを毎回調べる。
+        // 時間が少しもったいない気もするが.. 0.1秒ぐらいのことなので良しとする。
+        if (Eval::calc_check_sum() != 0x65cd7c55a9d4cd9)
+            sync_cout << "fatal error: the checksum of the evaluation file isn't valid. "
+                         "please download the new one." << sync_endl;
+    }
+    else {
+#endif
 	// 評価関数の読み込みなど時間のかかるであろう処理はこのタイミングで行なう。
 	// 起動時に時間のかかる処理をしてしまうと将棋所がタイムアウト判定をして、思考エンジンとしての認識をリタイアしてしまう。
 	if (first)
@@ -414,12 +433,14 @@ void is_ready()
 		first = false;
 
 	} else {
-
 		// メモリが破壊されていないかを調べるためにチェックサムを毎回調べる。
 		// 時間が少しもったいない気もするが.. 0.1秒ぐらいのことなので良しとする。
 		if (eval_sum != Eval::calc_check_sum())
 			sync_cout << "Error! : evaluate memory is corrupted" << sync_endl;
 	}
+#if defined(GODWHALE_CLUSTER_SLAVE)
+    }
+#endif
 
 	// isreadyに対してはreadyokを返すまで次のコマンドが来ないことは約束されているので
 	// このタイミングで各種変数の初期化もしておく。
@@ -450,10 +471,21 @@ void is_ready_cmd(Position& pos)
 }
 
 // "position"コマンド処理部
-void position_cmd(Position& pos, istringstream& is)
+void position_cmd(Position& pos, istringstream& is
+#if defined (GODWHALE_CLUSTER_SLAVE)
+    	          , bool isRSI = false
+#endif
+                  )
 {
 	Move m;
 	string token, sfen;
+
+#if defined (GODWHALE_CLUSTER_SLAVE)
+    std::string id;
+    if (isRSI) {
+        is >> id;
+    }
+#endif
 
 	is >> token;
 
@@ -469,7 +501,11 @@ void position_cmd(Position& pos, istringstream& is)
 	else {
 		if (token != "sfen")
 			sfen += token + " ";
-		while (is >> token && token != "moves")
+		while (is >> token && token != "moves"
+#if defined (GODWHALE_CLUSTER_SLAVE)
+               && (!isRSI || token != "branch")
+#endif
+            )
 			sfen += token + " ";
 	}
 
@@ -485,6 +521,13 @@ void position_cmd(Position& pos, istringstream& is)
 		SetupStates->push(StateInfo());
 		pos.do_move(m, SetupStates->top());
 	}
+
+    // IDはsetが終わった後に設定しないと0クリアされてしまう
+#if defined (GODWHALE_CLUSTER_SLAVE)
+    if (!id.empty()) {
+        pos.id = std::stoi(id);
+    }
+#endif
 }
 
 // "setoption"コマンド応答。
@@ -535,6 +578,14 @@ void go_cmd(const Position& pos, istringstream& is) {
 			// 残りの指し手すべてをsearchMovesに突っ込む。
 			while (is >> token)
 				limits.searchmoves.push_back(move_from_usi(pos, token));
+
+#if defined(GODWHALE_CLUSTER_SLAVE)
+        // 探索すべきてはない指し手。(探索開始局面から特定の初手だけ探索させないとき)
+        if (token == "ignoremoves")
+            // 残りの指し手すべてをignoreMovesに突っ込む。
+            while (is >> token)
+                limits.ignoremoves.push_back(move_from_usi(pos, token));
+#endif
 
 		// 先手、後手の残り時間。[ms]
 		else if (token == "wtime")     is >> limits.time[WHITE];
@@ -699,6 +750,17 @@ void USI::loop(int argc, char* argv[])
 			Time.reset_for_ponderhit(); // ponderhitから計測しなおすべきである。
 			Search::Limits.ponder = 0; // 通常探索に切り替える。
 		}
+
+#if defined (GODWHALE_CLUSTER_SLAVE)
+		else if (token == "xgo")        go_cmd(pos, is);
+		else if (token == "xposition")  position_cmd(pos, is, true);
+		else if (token == "xkeepalive") cout << "xkeepalive ok" << endl;
+
+		// GUI用のコマンド。ここでは何もしない
+		else if (token == "xinfo")     {}
+		else if (token == "xmove")     {}
+		else if (token == "xgameinfo") {}
+#endif
 
 		// 与えられた局面について思考するコマンド
 		else if (token == "go") go_cmd(pos, is);

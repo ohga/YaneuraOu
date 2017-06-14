@@ -61,6 +61,20 @@
 
 #include "extra/bitop.h"
 
+
+// --------------------
+//  for godwhale
+// --------------------
+
+#if defined(GODWHALE_CLUSTER_SLAVE)
+#include "../../child/version.hpp"
+#undef ENGINE_NAME
+#define ENGINE_NAME SlaveName
+
+extern bool IsGodwhaleMode;
+#endif
+
+
 // --------------------
 //      手番
 // --------------------

@@ -201,6 +201,29 @@ GlobalOptions_ GlobalOptions;
 //  main()
 // ----------------------------------------
 
+#if defined(GODWHALE_CLUSTER_SLAVE)
+#include "../../child/godwhale_io.hpp"
+
+bool IsGodwhaleMode = false;
+
+static void validate_login_name(const std::string name)
+{
+    if (name.empty()) {
+        std::cerr << "The Login_Name is empty !" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    if (name.length() > LoginNameMaxLength) {
+        std::cerr << "The Login_Name is too long !" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    if (!std::all_of(name.begin(), name.end(), [](char _) { return (isalnum(_) || _ == '_'); })) {
+        std::cerr << "The Login_Name '" << name << "' has invalid character !" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+}
+#endif
 
 int main(int argc, char* argv[])
 {
@@ -213,8 +236,28 @@ int main(int argc, char* argv[])
 	// 簡単な初期化のみで評価関数の読み込みはisreadyに応じて行なう。
 	Eval::init();
 
-	// USIコマンドの応答部
-	USI::loop(argc, argv);
+#if defined(GODWHALE_CLUSTER_SLAVE)
+    if (argc > 3) {
+        auto loginName = argv[3];
+        validate_login_name(loginName);
+        Options["Login_Name"] << USI::Option(loginName);
+        if (argc > 4) {
+            Options["Threads"] = argv[4];
+        }
+
+        IsGodwhaleMode = true;
+        start_godwhale_io(argv[1], argv[2]);
+        USI::loop(1, argv);
+        close_godwhale_io();
+    }
+    else {
+	    // USIコマンドの応答部
+	    USI::loop(argc, argv);
+    }
+#else
+    // USIコマンドの応答部
+    USI::loop(argc, argv);
+#endif
 
 	// 生成して、待機させていたスレッドの停止
 	Threads.exit();
