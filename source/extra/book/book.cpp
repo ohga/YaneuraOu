@@ -1173,8 +1173,14 @@ namespace Book
 			, "yaneura_book1.db" , "yaneura_book2.db" , "yaneura_book3.db", "yaneura_book4.db"
 			, "user_book1.db", "user_book2.db", "user_book3.db", "book.bin" };
 
-		o["BookFile"] << Option(book_list, book_list[1], [&](const Option& o){ this->book_name = string(o); });
-		book_name = book_list[1];
+        int defaultIndex =
+#if defined(GODWHALE_CLUSTER_SLAVE)
+            0;
+#else
+            1;
+#endif
+		o["BookFile"] << Option(book_list, book_list[defaultIndex], [&](const Option& o){ this->book_name = string(o); });
+		book_name = book_list[defaultIndex];
 
 		//  BookEvalDiff: 定跡の指し手で1番目の候補の指し手と、2番目以降の候補の指し手との評価値の差が、
 		//    この範囲内であれば採用する。(1番目の候補の指し手しか選ばれて欲しくないときは0を指定する)
