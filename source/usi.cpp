@@ -321,7 +321,7 @@ namespace USI
 		o["EnteringKingRule"] << Option(ekr_rules, ekr_rules[EKR_27_POINT], [](const Option& o) { set_entering_king_rule(o); });
 #endif
 
-		o["EvalDir"] << Option("eval");
+		o["EvalDir"] << Option("20170506");
 
 #if defined (USE_SHARED_MEMORY_IN_EVAL) && defined(_WIN32) && (defined(EVAL_KPPT) || defined(EVAL_EXPERIMENTAL))
 		// 評価関数パラメーターを共有するか
@@ -411,7 +411,7 @@ void is_ready()
 
         // メモリが破壊されていないかを調べるためにチェックサムを毎回調べる。
         // 時間が少しもったいない気もするが.. 0.1秒ぐらいのことなので良しとする。
-        if (Eval::calc_check_sum() != 0x65cd7c55a9d4cd9)
+        if (Eval::calc_check_sum() != EvalCheckSum)
             sync_cout << "fatal error: the checksum of the evaluation file isn't valid. "
                          "please download the new one." << sync_endl;
     }
