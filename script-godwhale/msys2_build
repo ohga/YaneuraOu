@@ -1,0 +1,25 @@
+#!/bin/sh
+
+# 各CPU用の実行ファイルの一括生成用バッチファイル
+rsync -av --exclude '*.bin' ../source .
+rsync -av --exclude 'x64' ../exe-switcher .
+
+mingw32-make clean
+mingw32-make -j10 switcher
+mv -f YaneuraOu-switcher.exe godwhale_child.exe
+
+mingw32-make clean
+mingw32-make -j10 avx2 YANEURAOU_EDITION=YANEURAOU_2017_EARLY_ENGINE
+mv -f YaneuraOu-by-gcc.exe YaneuraOu-2017-early-godwhale.exe
+
+mingw32-make clean
+mingw32-make -j10 sse42 YANEURAOU_EDITION=YANEURAOU_2017_EARLY_ENGINE
+mv -f YaneuraOu-by-gcc.exe YaneuraOu-2017-early-sse42-godwhale.exe
+
+mingw32-make clean
+mingw32-make -j10 sse41 YANEURAOU_EDITION=YANEURAOU_2017_EARLY_ENGINE
+mv -f YaneuraOu-by-gcc.exe YaneuraOu-2017-early-sse41-godwhale.exe
+
+mingw32-make clean
+mingw32-make -j10 sse2 YANEURAOU_EDITION=YANEURAOU_2017_EARLY_ENGINE
+mv -f YaneuraOu-by-gcc.exe YaneuraOu-2017-early-sse2-godwhale.exe

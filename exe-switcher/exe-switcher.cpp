@@ -23,7 +23,6 @@ static_assert(sizeof(int) == 4, "The size of integer must be 4byte.");
 #if defined(_MSC_VER)
 #include <intrin.h>
 
-#define EXE_EXT ".exe"
 #define execvp  _execvp
 
 // VCでcpuidの値を取得する
@@ -39,8 +38,6 @@ static void get_cpuidex(int *p, int i, int c)
 #elif defined(__GNUC__)
 #include <cpuid.h>
 
-#define EXE_EXT ""
-
 // gcc系でcpuidの値を取得する
 static void get_cpuid(int *p, int i)
 {
@@ -55,6 +52,14 @@ static void get_cpuidex(int *p, int i, int c)
 #error "This platform is not supported"
 #endif
 
+// exeの拡張子を選択
+#if defined(WIN32) || defined(_WIN32)
+#define EXE_EXT ".exe"
+#else
+#define EXE_EXT ""
+#endif
+
+/// 参考: https://msdn.microsoft.com/ja-jp/library/hskdteyh.aspx
 class InstructionSet
 {
 public:
@@ -138,7 +143,7 @@ private:
             // Interpret CPU brand string if reported
             if (last_id_ex >= 0x80000004) {
                 char brand[0x40] = { 0 };
-                memcpy(brand, data_ex[2].data(), sizeof(data_ex[0]));
+                memcpy(brand + 0, data_ex[2].data(), sizeof(data_ex[0]));
                 memcpy(brand + 16, data_ex[3].data(), sizeof(data_ex[0]));
                 memcpy(brand + 32, data_ex[4].data(), sizeof(data_ex[0]));
                 brand_ = brand;
@@ -146,12 +151,12 @@ private:
         };
 
         /// cpuidで取得可能なidの最後の数値を取得
-        int get_last_id(int ecx) const
+        uint32_t get_last_id(int ecx) const
         {
             std::array<int, 4> cpuinfo;
 
             get_cpuid(cpuinfo.data(), ecx);
-            return cpuinfo[0];
+            return static_cast<uint32_t>(cpuinfo[0]);
         }
 
         /// cpuidによるデータをまとめて取得
@@ -181,9 +186,12 @@ private:
 
 const InstructionSet::InstructionSet_Internal InstructionSet::internal;
 
-static void exec_file(char filename[], char *argv[])
+static void exec_file(const std::string &filename, char *argv[])
 {
-    argv[0] = filename;
+#if 1
+    std::vector<char> cloned(filename.begin(), filename.end());
+    cloned.push_back('\0');
+    argv[0] = cloned.data();
 
     printf("start");
     for (int i = 0; argv[i] != nullptr; ++i) {
@@ -191,7 +199,18 @@ static void exec_file(char filename[], char *argv[])
     }
     printf("\n");
 
-    execvp(filename, argv);
+    execvp(filename.c_str(), argv);
+
+#else
+    std::string command = filename;
+
+    for (int i = 1; argv[i] != nullptr; ++i) {
+        command += " ";
+        command += (const char *)argv[i];
+    }
+
+    system(command.c_str());
+#endif
 }
 
 int main(int argc, char *argv[])
@@ -209,7 +228,7 @@ int main(int argc, char *argv[])
         exec_file("YaneuraOu-2017-early-sse2-godwhale" EXE_EXT, argv);
     }
     else {
-        fprintf(stderr, "Not supported environment.");
+        fprintf(stderr, "fatal error: Not supported environment.");
     }
 
     return 0;
