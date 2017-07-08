@@ -1,6 +1,6 @@
 ﻿
 // Windows環境下でのプロセッサグループの割当関係
-#ifdef _WIN32
+#if defined(WIN32) || defined(_WIN32)
 #if _WIN32_WINNT < 0x0601
 #undef  _WIN32_WINNT
 #define _WIN32_WINNT 0x0601 // Force to include needed API prototypes

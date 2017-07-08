@@ -1,11 +1,16 @@
 ﻿
 #if defined GODWHALE_CLUSTER_SLAVE
 #include <iostream>
+#include <thread>
 #include "godwhale_io.hpp"
 
-#include <boost/thread/thread.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include "asio_socket_streambuf.hpp"
+
+namespace boost
+{
+    void throw_exception(std::exception const &e) { assert(false); }
+}
 
 // logging用のhack。streambufをこれでhookしてしまえば追加コードなしで普通に
 // cinからの入力とcoutへの出力をファイルにリダイレクトできる。
@@ -75,9 +80,7 @@ struct GodwhaleIO
         while (sockstream.connect(host, port) == nullptr) {
             std::cout << "retry..." << std::endl;
 
-            auto time = boost::get_system_time();
-            time += boost::posix_time::seconds(10);
-            boost::thread::sleep(time);
+            std::this_thread::sleep_for(std::chrono::seconds(10));
         }
 
         std::cout << "succeeded to connect" << std::endl;

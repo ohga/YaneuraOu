@@ -412,7 +412,7 @@ void is_ready()
         // メモリが破壊されていないかを調べるためにチェックサムを毎回調べる。
         // 時間が少しもったいない気もするが.. 0.1秒ぐらいのことなので良しとする。
         if (Eval::calc_check_sum() != EvalCheckSum)
-            sync_cout << "fatal error: the checksum of the evaluation file isn't valid. "
+            sync_cout << "info string fatal error: the checksum of the evaluation file isn't valid. "
                          "please download the new one." << sync_endl;
     }
     else {
@@ -436,7 +436,7 @@ void is_ready()
 		// メモリが破壊されていないかを調べるためにチェックサムを毎回調べる。
 		// 時間が少しもったいない気もするが.. 0.1秒ぐらいのことなので良しとする。
 		if (eval_sum != Eval::calc_check_sum())
-			sync_cout << "Error! : evaluate memory is corrupted" << sync_endl;
+			sync_cout << "info string fatal error: evaluate memory is corrupted" << sync_endl;
 	}
 #if defined(GODWHALE_CLUSTER_SLAVE)
     }
