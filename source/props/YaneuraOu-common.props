@@ -11,6 +11,7 @@
       <PreprocessorDefinitions>_CONSOLE;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>false</MinimalRebuild>
       <OpenMPSupport>false</OpenMPSupport>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
