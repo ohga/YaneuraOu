@@ -43,6 +43,11 @@ bld/
 [Bb]in/
 [Oo]bj/
 
+# godwhale
+script-godwhale/exe-switcher
+script-godwhale/obj
+script-godwhale/source
+
 # Visual Studio 2015 cache/options directory
 .vs/
 enc_temp_folder
