@@ -40,7 +40,7 @@ ifeq ($(OS),Windows_NT)
 	LDFLAGS += -static -Wl,--stack,100000000
 	TARGET = YaneuraOu-by-gcc.exe
 else
-	CFLAGS += -D_LINUX
+	CFLAGS += -D_LINUX -DGODWHALE_CLUSTER_SLAVE
 	TARGET = YaneuraOu-by-gcc
 endif
 
@@ -81,7 +81,7 @@ ifeq ($(findstring clang++,$(COMPILER)),clang++)
 endif
 
 CFLAGS += -DNO_EXCEPTIONS
-LDFLAGS += -lpthread
+LDFLAGS += -lpthread -lboost_system
 LDFLAGS += -v
 
 OBJDIR   = ../obj
@@ -135,7 +135,8 @@ SOURCES  = shogi.cpp                                                           \
 	engine/2018-otafuku-engine/2018-otafuku-search.cpp                         \
 	learn/learner.cpp                                                          \
 	learn/learning_tools.cpp                                                   \
-	learn/multi_think.cpp
+	learn/multi_think.cpp                                                      \
+	godwhale/godwhale_io.cpp
 
 ifeq ($(YANEURAOU_EDITION),MATE_ENGINE)
 	SOURCES += engine/mate-engine/mate-search.cpp
