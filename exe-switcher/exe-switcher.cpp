@@ -16,6 +16,7 @@
 #include <vector>
 #include <process.h>
 #include <stdio.h>
+#include <memory.h>
 
 // int型のサイズが4バイトか確認する
 static_assert(sizeof(int) == 4, "The size of integer must be 4byte.");

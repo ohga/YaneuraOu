@@ -472,7 +472,7 @@ void is_ready_cmd(Position& pos)
 
 // "position"コマンド処理部
 void position_cmd(Position& pos, istringstream& is
-#if defined (GODWHALE_CLUSTER_SLAVE)
+#if defined(GODWHALE_CLUSTER_SLAVE)
     	          , bool isRSI = false
 #endif
                   )
@@ -480,7 +480,7 @@ void position_cmd(Position& pos, istringstream& is
 	Move m;
 	string token, sfen;
 
-#if defined (GODWHALE_CLUSTER_SLAVE)
+#if defined(GODWHALE_CLUSTER_SLAVE)
     std::string id;
     if (isRSI) {
         is >> id;
@@ -502,7 +502,7 @@ void position_cmd(Position& pos, istringstream& is
 		if (token != "sfen")
 			sfen += token + " ";
 		while (is >> token && token != "moves"
-#if defined (GODWHALE_CLUSTER_SLAVE)
+#if defined(GODWHALE_CLUSTER_SLAVE)
                && (!isRSI || token != "branch")
 #endif
             )
@@ -523,7 +523,7 @@ void position_cmd(Position& pos, istringstream& is
 	}
 
     // IDはsetが終わった後に設定しないと0クリアされてしまう
-#if defined (GODWHALE_CLUSTER_SLAVE)
+#if defined(GODWHALE_CLUSTER_SLAVE)
     if (!id.empty()) {
         pos.id = std::stoi(id);
     }
@@ -751,7 +751,7 @@ void USI::loop(int argc, char* argv[])
 			Search::Limits.ponder = 0; // 通常探索に切り替える。
 		}
 
-#if defined (GODWHALE_CLUSTER_SLAVE)
+#ifdef GODWHALE_CLUSTER_SLAVE
 		else if (token == "xgo")        go_cmd(pos, is);
 		else if (token == "xposition")  position_cmd(pos, is, true);
 		else if (token == "xkeepalive") cout << "xkeepalive ok" << endl;

@@ -66,7 +66,7 @@
 //  for godwhale
 // --------------------
 
-#if defined(GODWHALE_CLUSTER_SLAVE)
+#ifdef GODWHALE_CLUSTER_SLAVE
 #include "godwhale/version.hpp"
 #undef ENGINE_NAME
 #define ENGINE_NAME SlaveName
