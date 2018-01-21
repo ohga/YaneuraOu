@@ -141,7 +141,7 @@ void ThreadPool::start_thinking(const Position& pos, StateListPtr& states ,
                 || count(limits.ignoremoves.begin(), limits.ignoremoves.end(), m) == 0)
 #endif
             )
-			main()->rootMoves.emplace_back(m);
+			rootMoves.emplace_back(m);
 
 	// 所有権の移動後、statesが空になるので、探索を停止させ、
 	// "go"をstate.get() == NULLである新しいpositionをセットせずに再度呼び出す。
@@ -165,7 +165,12 @@ void ThreadPool::start_thinking(const Position& pos, StateListPtr& states ,
 		th->rootMoves = rootMoves;
 
 		// setupStatesを渡して、これをコピーしておかないと局面を遡れない。
-		th->rootPos.set(sfen, &setupStates->back(),th);
+		th->rootPos.set(sfen, &setupStates->back(), th);
+
+        // setの後にidの設定を行う。
+#if defined(GODWHALE_CLUSTER_SLAVE)
+        th->rootPos.id = pos.id;
+#endif
 	}
 
 #if defined(USE_FV_VAR)

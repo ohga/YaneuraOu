@@ -495,13 +495,12 @@ void is_ready(bool skipCorruptCheck)
 		Eval::print_softname(eval_sum);
 
 #if defined(GODWHALE_CLUSTER_SLAVE)
-        if (eval_sum != EvalCheckSum)
+        /*if (eval_sum != EvalCheckSum)
             sync_cout << "info string fatal error: the checksum of the evaluation file isn't valid. "
-                         "please download the new one." << sync_endl;
+                         "please download the new one." << sync_endl;*/
 #endif
 
 		load_eval_finished = true;
-
 	}
 	else
 	{
@@ -510,7 +509,6 @@ void is_ready(bool skipCorruptCheck)
 		if (!skipCorruptCheck && eval_sum != Eval::calc_check_sum())
 			sync_cout << "info string fatal error: EVAL memory is corrupted" << sync_endl;
 	}
-#endif
 
 	// isreadyに対してはreadyokを返すまで次のコマンドが来ないことは約束されているので
 	// このタイミングで各種変数の初期化もしておく。
@@ -894,8 +892,8 @@ void USI::loop(int argc, char* argv[])
 		}
 
 #ifdef GODWHALE_CLUSTER_SLAVE
-		else if (token == "xgo")        go_cmd(pos, is);
-		else if (token == "xposition")  position_cmd(pos, is, true);
+		else if (token == "xgo")        go_cmd(pos, is, states);
+		else if (token == "xposition")  position_cmd(pos, is, states, true);
 		else if (token == "xkeepalive") cout << "xkeepalive ok" << endl;
 
 		// GUI用のコマンド。ここでは何もしない

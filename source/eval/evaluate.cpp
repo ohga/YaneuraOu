@@ -99,6 +99,7 @@ namespace Eval
 
 			{ 0x0000c62cf4f6b91 , "relmo8"                } , // リゼロ評価関数epoch8とelmo(WCSC27)を1:1でブレンド
 			{ 0x0000c85005252ee , "yaselmo(20170705)"     } , // 野生の読み太(20170703)とelmo(WCSC27)を1:1でブレンド
+            { 0x0000cdfb3ca11fc , "mafu(20171101)"        } , // マフさん作成評価関数
 
 			// KPP_KKPT型
 			{ 0x0000574a685513c , "kppkkpt rezero epoch4" } , // KPP_KKPT型リゼロ評価関数epoch4

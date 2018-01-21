@@ -68,6 +68,9 @@
     <Filter Include="リソース ファイル\engine\2018-otafuku-engine">
       <UniqueIdentifier>{1822c23d-4270-4155-8c9b-ed15821d29ba}</UniqueIdentifier>
     </Filter>
+    <Filter Include="リソース ファイル\godwhale">
+      <UniqueIdentifier>{9820910c-2c4c-4870-83e5-8324bd7700e2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="evaluate.h">
@@ -189,6 +192,15 @@
     </ClInclude>
     <ClInclude Include="engine\2018-otafuku-engine\2018-otafuku-param.h">
       <Filter>リソース ファイル\engine\2018-otafuku-engine</Filter>
+    </ClInclude>
+    <ClInclude Include="godwhale\asio_socket_streambuf.hpp">
+      <Filter>リソース ファイル\godwhale</Filter>
+    </ClInclude>
+    <ClInclude Include="godwhale\godwhale_io.hpp">
+      <Filter>リソース ファイル\godwhale</Filter>
+    </ClInclude>
+    <ClInclude Include="godwhale\version.hpp">
+      <Filter>リソース ファイル\godwhale</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -338,6 +350,9 @@
     </ClCompile>
     <ClCompile Include="engine\2018-otafuku-engine\2018-otafuku-search.cpp">
       <Filter>リソース ファイル\engine\2018-otafuku-engine</Filter>
+    </ClCompile>
+    <ClCompile Include="godwhale\godwhale_io.cpp">
+      <Filter>リソース ファイル\godwhale</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

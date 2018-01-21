@@ -2438,7 +2438,7 @@ void learn(Position&, istringstream& is)
 
 		// このフォルダを根こそぎ取る。base_dir相対にしておく。
 #if defined(_MSC_VER)
-		namespace sys = std::tr2::sys;
+        namespace sys = std::experimental::filesystem;
 		sys::path p(kif_base_dir); // 列挙の起点
 		std::for_each(sys::directory_iterator(p), sys::directory_iterator(),
 			[&](const sys::path& p) {
