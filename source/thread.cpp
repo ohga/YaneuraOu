@@ -1,60 +1,59 @@
 ﻿#include "thread.h"
 
-#include "misc.h"
+ThreadPool Threads;		// Global object
 
-ThreadPool Threads;
+void* Thread::operator new(size_t s) { return aligned_malloc(s, alignof(Thread)); }
+void Thread::operator delete(void*p) noexcept { aligned_free(p); }
 
-using namespace std;
-using namespace Search;
+Thread::Thread(size_t n) : idx(n) , stdThread(&Thread::idle_loop, this)
+{
+	// スレッドはsearching == trueで開始するので、このままworkerのほう待機状態にさせておく
+	wait_for_search_finished();
 
-namespace {
-
-	// std::thread派生型であるT型のthreadを一つ作って、そのidle_loopを実行するためのマクロ。
-	// 生成されたスレッドはidle_loop()で仕事が来るのを待機している。
-	template<typename T> T* new_thread() {
-		void* dst = _mm_malloc(sizeof(T), alignof(T));
-		// 確保に成功したならゼロクリアしておく。
-		if (dst)
-			std::memset(dst, 0, sizeof(T));
-
-		T* th = new (dst) T();
-		return (T*)th;
-	}
-
-	// new_thread()の逆。エンジン終了時に呼び出される。
-	void delete_thread(Thread *th) {
-		th->terminate();
-		_mm_free(th);
-	}
+	// historyなどをゼロクリアする。
+	// このタイミングでやらないとgccで変数が未初期化扱いされてしまう。
+	clear();
 }
 
-Thread::Thread()
+// std::threadの終了を待つ
+Thread::~Thread()
 {
-	resetCalls = exit = false;
+	// 探索中にスレッドオブジェクトが解体されることはない。
+	ASSERT_LV3(!searching);
 
-	// maxPlyを更新しない思考エンジンでseldepthの出力がおかしくなるのを防止するために
-	// ここでとりあえず初期化しておいてやる。
-	maxPly = callsCnt = 0;
+	// 探索は終わっているのでexitフラグをセットしてstart_searching()を呼べば終了するはず。
+	exit = true;
+	start_searching();
+	stdThread.join();
+}
 
-	idx = Threads.size();  // スレッド番号(MainThreadが0。slaveは1から順番に)
+// このクラスが保持している探索で必要なテーブル(historyなど)をクリアする。
+void Thread::clear()
+{
+	counterMoves.fill(MOVE_NONE);
+	mainHistory.fill(0);
 
-	// スレッドを一度起動してworkerのほう待機状態にさせておく
+	// ここは、未初期化のときに[SQ_ZERO][NO_PIECE]を指すので、ここを-1で初期化しておくことによって、
+	// history > 0 を条件にすれば自ずと未初期化のときは除外されるようになる。
+	for (auto& to : counterMoveHistory)
+		for (auto& h : to)
+			h.fill(0);
+
+	counterMoveHistory[SQ_ZERO][NO_PIECE].fill(Search::CounterMovePruneThreshold - 1);
+}
+
+void Thread::start_searching()
+{
 	std::unique_lock<Mutex> lk(mutex);
 	searching = true;
-	nativeThread = std::thread(&Thread::idle_loop, this);
-	sleepCondition.wait(lk, [&] {return !searching; });
+	cv.notify_one(); // idle_loop()で回っているスレッドを起こす。(次の処理をさせる)
 }
 
-// std::threadの終了を待つ(デストラクタに相当する)
-// Threadクラスがnewするときにalignasが利かないので自前でnew_thread(),delete_thread()を
-// 呼び出しているのでデストラクタで書くわけにはいかない。
-void Thread::terminate() {
-
-	mutex.lock();
-	exit = true; // 探索は終わっているはずなのでこのフラグをセットして待機する。
-	sleepCondition.notify_one();
-	mutex.unlock();
-	nativeThread.join();
+// 探索が終わるのを待機する。(searchingフラグがfalseになるのを待つ)
+void Thread::wait_for_search_finished()
+{
+	std::unique_lock<Mutex> lk(mutex);
+	cv.wait(lk, [&] { return !searching; });
 }
 
 // 探索するときのmaster,slave用のidle_loop。探索開始するまで待っている。
@@ -70,67 +69,70 @@ void Thread::idle_loop() {
 
 		while (!searching && !exit)
 		{
-			sleepCondition.notify_one(); // 他のスレッドがこのスレッドを待機待ちしてるならそれを起こす
-			sleepCondition.wait(lk);
+			cv.notify_one(); // 他のスレッドがこのスレッドを待機待ちしてるならそれを起こす
+			cv.wait(lk);
 		}
+
+		if (exit)
+			return;
 
 		lk.unlock();
 
-		// !exitで抜けてきたということはsearch == trueというわけだから探索する。
-		// exit == true && search == trueというケースにおいてはsearch()を呼び出してはならないので
-		// こういう書き方をしてある。
-		if (!exit)
-			search();
+		// exit == falseということはsearch == trueというわけだから探索する。
+		search();
 	}
 }
 
-std::vector<Thread*>::iterator Slaves::begin() const { return Threads.begin() + 1; }
-std::vector<Thread*>::iterator Slaves::end() const { return Threads.end(); }
-
-void ThreadPool::init() {
-	// MainThreadを一つ生成して、そのあとusi_optionを呼び出す。
-	// そのなかにスレッド数が書いてあるので足りなければその数だけスレッドが生成される。
-
-	push_back(new_thread<MainThread>());
-	read_usi_options();
+// MainThreadを一つ生成して、そのあとrequestedで要求された分だけスレッドを生成する。(MainThreadも含めて数える)
+void ThreadPool::init(size_t requested)
+{
+	push_back(new MainThread(0));
+	set(requested);
 }
 
 void ThreadPool::exit()
 {
-	// 逆順で解体する必要がある。
-	while (size())
-	{
-		delete_thread(back());
-		pop_back();
-	}
+	// 探索の終了を待つ
+	main()->wait_for_search_finished();
+	set(0);
 }
 
-// USIプロトコルで指定されているスレッド数を反映させる。
-void ThreadPool::read_usi_options() {
-
-	// MainThreadが生成されてからしかworker threadを生成してはいけない作りになっているので
-	// USI::Optionsの初期化のタイミングでこの関数を呼び出すわけにはいかない。
-	// ゆえにUSI::Optionを引数に取らず、USI::Options["Threads"]から値をもらうようにする。
-	size_t requested = Options["Threads"];
-	ASSERT_LV1(requested > 0);
-
-	// 足りなければ生成
-	while (size() < requested)
-		push_back(new_thread<Thread>());
-
-	// 余っていれば解体
-	while (size() > requested)
-	{
-		delete_thread(back());
-		pop_back();
-	}
-}
-
-void ThreadPool::init_for_slave(const Position& pos, const Search::LimitsType& limits)
+// スレッド数を変更する。
+void ThreadPool::set(size_t requested)
 {
+	// スレッドが足りなければ生成
+	while (size() < requested)
+		push_back(new Thread(size()));
+
+	// スレッドが余っていれば解体
+	while (size() > requested)
+		delete back(), pop_back();
+}
+
+void ThreadPool::start_thinking(const Position& pos, StateListPtr& states ,
+								const Search::LimitsType& limits , bool ponderMode)
+{
+	// 思考中であれば停止するまで待つ。
+	main()->wait_for_search_finished();
+
+	// ponderに関して、StockfishではstopOnPonderhitというのがあるが、やねうら王にはこのフラグはない。
+	/* stopOnPonderhit = */ stop = false;
+	ponder = ponderMode;
+	Search::Limits = limits;
+	Search::RootMoves rootMoves;
+
 	// 初期局面では合法手すべてを生成してそれをrootMovesに設定しておいてやる。
 	// このとき、歩の不成などの指し手は除く。(そのほうが勝率が上がるので)
 	// また、goコマンドでsearchmovesが指定されているなら、そこに含まれていないものは除く。
+	
+	// あと宣言勝ちできるなら、その指し手を先頭に入れておいてやる。
+	// (ただし、トライルールのときはMOVE_WINではないので、トライする指し手はsearchmovesに含まれていなければ
+	// 指しては駄目な手なのでrootMovesに追加しない。)
+#if defined (USE_ENTERING_KING_WIN)
+	if (pos.DeclarationWin() == MOVE_WIN)
+		rootMoves.emplace_back(MOVE_WIN);
+#endif
+
 	for (auto m : MoveList<LEGAL>(pos))
 		if ((limits.searchmoves.empty()
 			 || count(limits.searchmoves.begin(), limits.searchmoves.end(), m))
@@ -139,37 +141,41 @@ void ThreadPool::init_for_slave(const Position& pos, const Search::LimitsType& l
                 || count(limits.ignoremoves.begin(), limits.ignoremoves.end(), m) == 0)
 #endif
             )
-			main()->rootMoves.push_back(RootMove(m));
-    
-	// おまけでslaveの初期局面も同じにしておいてやる。
-	for (auto th : *this)
-	{
-		if (th != main())
-		{
-			th->rootPos = Position(main()->rootPos);
-			th->rootMoves = main()->rootMoves;
-		}
-		// Positionクラスに対して、それを探索しているスレッドを設定しておいてやる。
-		th->rootPos.set_this_thread(th);
-	}
-}
+			main()->rootMoves.emplace_back(m);
 
-void ThreadPool::start_thinking(const Position& pos, const Search::LimitsType& limits, Search::StateStackPtr& states)
-{
-	// 思考中であれば停止するまで待つ。
-	main()->wait_for_search_finished();
-
-	Signals.stop = false;
-
-	main()->rootMoves.clear();
-	main()->rootPos = pos;
-	Limits = limits;
+	// 所有権の移動後、statesが空になるので、探索を停止させ、
+	// "go"をstate.get() == NULLである新しいpositionをセットせずに再度呼び出す。
+	ASSERT_LV3(states.get() || setupStates.get());
 
 	// statesが呼び出し元から渡されているならこの所有権をSearch::SetupStatesに移しておく。
+	// このstatesは、positionコマンドに対して用いたStateInfoでなければならない。(CheckInfoが異なるため)
+	// 引数で渡されているstatesは、そうなっているものとする。
 	if (states.get())
-		SetupStates = std::move(states);
+		setupStates = std::move(states);
 
-	init_for_slave(pos, limits);
+	// Position::set()によってst->previosがクリアされるので事前にコピーして保存する。
+	// cf. Fix incorrect StateInfo : https://github.com/official-stockfish/Stockfish/commit/232c50fed0b80a0f39322a925575f760648ae0a5
+	StateInfo tmp = setupStates->back();
+
+	auto sfen = pos.sfen();
+	for (auto th : *this)
+	{
+		th->nodes = 0;
+		th->rootDepth = th->completedDepth = DEPTH_ZERO;
+		th->rootMoves = rootMoves;
+
+		// setupStatesを渡して、これをコピーしておかないと局面を遡れない。
+		th->rootPos.set(sfen, &setupStates->back(),th);
+	}
+
+#if defined(USE_FV_VAR)
+	// Position::set()によって、dirtyPieceはevalListに反映されていることになるのだが、
+	// 次にst->previousを復元してしまうと、その更新したことを示すフラグを潰してしまう。ここでフラグを立て直す。
+	tmp.dirtyPiece.updated_ = true;
+#endif
+
+	// Position::set()によってクリアされていた、st->previousを復元する。
+	setupStates->back() = tmp;
 
 	main()->start_searching();
 }

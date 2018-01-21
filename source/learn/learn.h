@@ -12,15 +12,9 @@
 // 以下のいずれかを選択すれば、そのあとの細々したものは自動的に選択される。
 // いずれも選択しない場合は、そのあとの細々したものをひとつひとつ設定する必要がある。
 
-// デフォルトの学習設定
-// #define LEARN_DEFAULT
-
-// elmo方式での学習設定。
-// #define LEARN_ELMO_METHOD
-
-// やねうら王2017GOKU用のデフォルトの学習設定
-// ※　このオプションは実験中なので使わないように。
-#define LEARN_YANEURAOU_2017_GOKU
+// elmo方式での学習設定。これをデフォルト設定とする。
+// 標準の雑巾絞りにするためにはlearnコマンドで "lambda 1"を指定してやれば良い。
+#define LEARN_ELMO_METHOD
 
 
 // ----------------------
@@ -32,7 +26,6 @@
 
 // 勾配の符号だけ見るSGD。省メモリで済むが精度は…。
 // #define SGD_UPDATE
-
 
 // ----------------------
 //    学習時の設定
@@ -47,15 +40,16 @@
 #define LEARN_MINI_BATCH_SIZE (1000 * 1000 * 1)
 
 // ファイルから1回に読み込む局面数。これだけ読み込んだあとshuffleする。
-// ある程度大きいほうが良いが、この数×34byte×3倍ぐらいのメモリを消費する。10M局面なら340MB*3程度消費する。
+// ある程度大きいほうが良いが、この数×40byte×3倍ぐらいのメモリを消費する。10M局面なら400MB*3程度消費する。
 // THREAD_BUFFER_SIZE(=10000)の倍数にすること。
 
 #define LEARN_SFEN_READ_SIZE (1000 * 1000 * 10)
 
 // 学習時の評価関数の保存間隔。この局面数だけ学習させるごとに保存。
 // 当然ながら、保存間隔を長くしたほうが学習時間は短くなる。
-// 4.5億局面に1回。
-#define LEARN_EVAL_SAVE_INTERVAL (450000000ULL)
+// フォルダ名は 0/ , 1/ , 2/ ...のように保存ごとにインクリメントされていく。
+// デフォルトでは10億局面に1回。
+#define LEARN_EVAL_SAVE_INTERVAL (1000000000ULL)
 
 
 // ----------------------
@@ -82,26 +76,12 @@
 
 
 // ----------------------
-// 評価関数ファイルの保存
-// ----------------------
-
-// 保存するときのフォルダ番号を、この局面数ごとにインクリメントしていく。
-// 例) "0/KK_synthesized.bin" →　"1/KK_synthesized.bin"
-// 現状、10億局面ずつ。
-#define EVAL_FILE_NAME_CHANGE_INTERVAL (u64)1000000000
-
-// evalファイルの保存は(終了のときの)1度のみにする。
-//#define EVAL_SAVE_ONLY_ONCE
-
-
-// ----------------------
 // 学習に関するデバッグ設定
 // ----------------------
 
-// 学習時のrmseとタイムスタンプの出力をこの回数に1回に減らす。
+// 学習時のrmseの出力をこの回数に1回に減らす。
 // rmseの計算は1スレッドで行なうためそこそこ時間をとられるので出力を減らすと効果がある。
 #define LEARN_RMSE_OUTPUT_INTERVAL 1
-#define LEARN_TIMESTAMP_OUTPUT_INTERVAL 10
 
 
 // ----------------------
@@ -134,25 +114,62 @@ typedef float LearnFloatType;
 //#include "half_float.h"
 //typedef HalfFloat::float16 LearnFloatType;
 
-
 // ----------------------
 //  省メモリ化
 // ----------------------
 
 // Weight配列(のうちのKPP)に三角配列を用いて省メモリ化する。
-// これを用いると、学習用の重み配列は評価関数ファイルの2.5倍程度で済むようになる。
+// これを用いると、学習用の重み配列は評価関数ファイルの3倍程度で済むようになる。
 
 #define USE_TRIANGLE_WEIGHT_ARRAY
 
+// ----------------------
+//  次元下げ
+// ----------------------
+
+// ミラー(左右対称性)、インバース(先後対称性)に関して次元下げを行なう。
+// デフォルトではすべてオン。
+
+// KKに対してミラー、インバースを利用した次元下げを行なう。(効果のほどは不明)
+// USE_KK_INVERSE_WRITEをオンにするときはUSE_KK_MIRROR_WRITEもオンでなければならない。
+#define USE_KK_MIRROR_WRITE
+#define USE_KK_INVERSE_WRITE
+
+// KKPに対してミラー、インバースを利用した次元下げを行なう。(インバースのほうは効果のほどは不明)
+// USE_KKP_INVERSE_WRITEをオンにするときは、USE_KKP_MIRROR_WRITEもオンになっていなければならない。
+#define USE_KKP_MIRROR_WRITE
+#define USE_KKP_INVERSE_WRITE
+
+// KPPに対してミラーを利用した次元下げを行なう。(これをオフにすると教師局面が倍ぐらい必要になる)
+// KPPにはインバースはない。(先手側のKしかないので)
+#define USE_KPP_MIRROR_WRITE
+
+// KPPPに対してミラーを利用した次元下げを行なう。(これをオフにすると教師局面が倍ぐらい必要になる)
+// KPPPにもインバースはない。(先手側のKしかないので)
+#define USE_KPPP_MIRROR_WRITE
+
+// KKPP成分に対して学習時にKPPによる次元下げを行なう。
+// 学習、めっちゃ遅くなる。
+// 未デバッグなので使わないこと。
+//#define USE_KKPP_LOWER_DIM
+
+
+// ======================
+//  教師局面生成時の設定
+// ======================
 
 // ----------------------
-//    標準の学習方法
+//  引き分けを書き出す
 // ----------------------
 
-#if defined (LEARN_DEFAULT)
-#define LOSS_FUNCTION_IS_WINNING_PERCENTAGE
-#define ADA_GRAD_UPDATE
-#endif
+// 引き分けに至ったとき、それを教師局面として書き出す
+// これをするほうが良いかどうかは微妙。
+// #define LEARN_GENSFEN_USE_DRAW_RESULT
+
+
+// ======================
+//       configure
+// ======================
 
 // ----------------------
 //  elmo(WCSC27)の方法での学習
@@ -161,26 +178,6 @@ typedef float LearnFloatType;
 #if defined( LEARN_ELMO_METHOD )
 #define LOSS_FUNCTION_IS_ELMO_METHOD
 #define ADA_GRAD_UPDATE
-#endif
-
-// ----------------------
-//  やねうら王2017GOKUの方法
-// ----------------------
-
-#if defined(LEARN_YANEURAOU_2017_GOKU)
-
-// 損失関数、比較実験中。
-//#define LOSS_FUNCTION_IS_CROSS_ENTOROPY
-//#define LOSS_FUNCTION_IS_WINNING_PERCENTAGE
-#define LOSS_FUNCTION_IS_ELMO_METHOD
-//#define LOSS_FUNCTION_IS_YANE_ELMO_METHOD
-
-#define ADA_GRAD_UPDATE
-//#define SGD_UPDATE
-
-// 実験時は1回だけの保存で良い。
-// #define EVAL_SAVE_ONLY_ONCE
-
 #endif
 
 
@@ -203,14 +200,17 @@ namespace Learner
 		s16 score;
 
 		// PVの初手
+		// 教師との指し手一致率を求めるときなどに用いる
 		u16 move;
 
 		// 初期局面からの局面の手数。
 		u16 gamePly;
 
-		// この局面の手番側が、ゲームを最終的に勝っているならtrue。負けているならfalse。
-		// 引き分けに至った場合は、局面自体書き出さない。
-		bool isWin;
+		// この局面の手番側が、ゲームを最終的に勝っているなら1。負けているなら-1。
+		// 引き分けに至った場合は、0。
+		// 引き分けは、教師局面生成コマンドgensfenにおいて、
+		// LEARN_GENSFEN_DRAW_RESULTが有効なときにだけ書き出す。
+		s8 game_result;
 
 		// 教師局面を書き出したファイルを他の人とやりとりするときに
 		// この構造体サイズが不定だと困るため、paddingしてどの環境でも必ず40bytesになるようにしておく。
@@ -218,6 +218,16 @@ namespace Learner
 
 		// 32 + 2 + 2 + 2 + 1 + 1 = 40bytes
 	};
+
+	// 読み筋とそのときの評価値を返す型
+	// Learner::search() , Learner::qsearch()で用いる。
+	typedef std::pair<Value, std::vector<Move> > ValueAndPV;
+
+	// いまのところ、やねうら王2017Earlyしか、このスタブを持っていないが
+	// EVAL_LEARNをdefineするなら、このスタブが必須。
+	extern Learner::ValueAndPV  search(Position& pos, int depth , size_t multiPV = 1);
+	extern Learner::ValueAndPV qsearch(Position& pos);
+
 }
 
 #endif

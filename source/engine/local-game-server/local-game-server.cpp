@@ -600,7 +600,7 @@ void Thread::search()
 
 	// 対局開始時のハンドラ
 	auto game_start = [&] {
-		rootPos.set_hirate();
+		rootPos.set_hirate(this);
 		game_started = true;
 
 		// 定跡が設定されているならその局面まで進める
@@ -691,7 +691,7 @@ void Thread::search()
 	};
 
 	string line;
-	while (/*!Search::Signals.stop &&*/ games < max_games)
+	while (/*!Threads.stop &&*/ games < max_games)
 	{
 		// stopは受け付けないようにする。
 		// そうしないとコマンドラインから実行するときにquitコマンドをqueueに積んでおくことが出来ない。
@@ -751,7 +751,8 @@ void Thread::search()
 	if (games == max_games)
 		game_over(false);
 
-	if (is_main())
+	// メインスレッドならエンジン名を反映
+	if (this == Threads.main())
 	{
 		usi_engine_name[0] = es[0].engine_name();
 		usi_engine_name[1] = es[1].engine_name();

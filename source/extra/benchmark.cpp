@@ -6,7 +6,6 @@
 #include "../thread.h"
 
 using namespace std;
-extern void is_ready();
 
 // ----------------------------------
 //  USI拡張コマンド "bench"(ベンチマーク)
@@ -31,8 +30,11 @@ static const char* BenchSfen[] = {
 	"l6nl/5+P1gk/2np1S3/p1p4Pp/3P2Sp1/1PPb2P1P/P5GS1/R8/LN4bKL w RGgsn5p 1",
 };
 
-void bench_cmd(Position& pos, istringstream& is)
+void bench_cmd(Position& current, istringstream& is)
 {
+	// Optionsを書き換えるのであとで復元する。
+	auto oldOptions = Options;
+
 	string token;
 	Search::LimitsType limits;
 	vector<string> fens;
@@ -89,7 +91,7 @@ void bench_cmd(Position& pos, istringstream& is)
 	if (fenFile == "default")
 		fens.assign(BenchSfen, BenchSfen + 3);
 	else if (fenFile == "current")
-		fens.push_back(pos.sfen());
+		fens.push_back(current.sfen());
 	else
 		read_all_lines(fenFile, fens);
 
@@ -101,28 +103,29 @@ void bench_cmd(Position& pos, istringstream& is)
 
 	// main threadが探索したノード数
 	int64_t nodes_main = 0;
-	Search::StateStackPtr st;
 
 	// ベンチの計測用タイマー
 	Timer time;
 	time.reset();
 
+	Position pos;
 	for (size_t i = 0; i < fens.size(); ++i)
 	{
-		Position pos;
-		pos.set(fens[i]);
-		pos.set_this_thread(Threads.main());
+		// SetupStatesは破壊したくないのでローカルに確保
+		StateListPtr states(new StateList(1));
+
+		pos.set(fens[i] ,&states->back() , Threads.main());
 
 		sync_cout << "\nPosition: " << (i + 1) << '/' << fens.size() << sync_endl;
 
 		// 探索時にnpsが表示されるが、それはこのglobalなTimerに基づくので探索ごとにリセットを行なうようにする。
 		Time.reset();
 
-		Threads.start_thinking(pos, limits, st);
+		Threads.start_thinking(pos, states , limits);
 		Threads.main()->wait_for_search_finished(); // 探索の終了を待つ。
 
 		nodes += Threads.nodes_searched();
-		nodes_main += Threads.main()->rootPos.nodes_searched();
+		nodes_main += Threads.main()->nodes.load(std::memory_order_relaxed);
 	}
 
 	auto elapsed = time.elapsed() + 1; // 0除算の回避のため
@@ -139,6 +142,10 @@ void bench_cmd(Position& pos, istringstream& is)
 
 	cout << sync_endl;
 
+	// Optionsを書き換えたので復元。
+	// 値を代入しないとハンドラが起動しないのでこうやって復元する。
+	for (auto& s : oldOptions)
+		Options[s.first] = std::string(s.second);
 }
 
 

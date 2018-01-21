@@ -1,14 +1,15 @@
 ﻿#ifndef _SEARCH_H_
 #define _SEARCH_H_
 
-#include <atomic>
-
 #include "position.h"
 #include "move_picker.h"
 #include "misc.h"
 
 // 探索関係
 namespace Search {
+
+	// countermoves based pruningで使う閾値
+	const int CounterMovePruneThreshold = 0;
 
 	// root(探索開始局面)での指し手として使われる。それぞれのroot moveに対して、
 	// その指し手で進めたときのscore(評価値)とPVを持っている。(PVはfail lowしたときには信用できない)
@@ -39,18 +40,24 @@ namespace Search {
 		// 次のiteration時の探索窓の範囲を決めるときに使う。
 		Value previousScore = -VALUE_INFINITE;
 
+		// このスレッドがrootから最大、何手目まで探索したか(選択深さの最大)
+		int selDepth = 0;
+
 		// この指し手で進めたときのpv
 		std::vector<Move> pv;
 	};
 
+	typedef std::vector<RootMove> RootMoves;
+
 	// goコマンドでの探索時に用いる、持ち時間設定などが入った構造体
+	// "ponder"のフラグはここに含まれず、Threads.ponderにあるので注意。
 	struct LimitsType {
 
-		// PODでない型をmemsetでゼロクリアするとMSVCは破壊してしまうので明示的に初期化する。
+		// PODでない型をmemsetでゼロクリアすると破壊してしまうので明示的に初期化する。
 		LimitsType() {
 			nodes = time[WHITE] = time[BLACK] = inc[WHITE] = inc[BLACK] = byoyomi[WHITE] = byoyomi[BLACK] = npmsec
-				= depth = movetime = mate = infinite = ponder = rtime = 0;
-			silent = bench = ponder_mode = consideration_mode = outout_fail_lh_pv = false;
+				= depth = movetime = mate = infinite = rtime = 0;
+			silent = bench = consideration_mode = outout_fail_lh_pv = false;
 			max_game_ply = 100000;
 			enteringKingRule = EKR_NONE;
 		}
@@ -93,23 +100,19 @@ namespace Search {
 		int movetime;
 
 		// mate     : 詰み専用探索(USIの'go mate'コマンドを使ったとき)
-		//  詰み探索モードのときは、ここに思考時間が指定されている。
-		//  この思考時間いっぱいまで考えて良い。
+		//  詰み探索モードのときは、ここに詰みの手数が指定されている。
+		// その手数以内の詰みが見つかったら探索を終了する。
+		// ※　Stockfishの場合、この変数は先後分として将棋の場合の半分の手数が格納されているので注意。
 		int mate;
 
 		// infinite : 思考時間無制限かどうかのフラグ。非0なら無制限。
 		int infinite;
 
-		// ponder   : ponder中であるかのフラグ
-		//  これがtrueのときはbestmoveがあっても探索を停止せずに"ponderhit"か"stop"が送られてきてから停止する。
-		//  ※ ただし今回用の探索時間を超えていれば、stopOnPonderhitフラグをtrueにしてあるのでponderhitに対して即座に停止する。
-		int ponder;
-
 		// "go rtime 100"とすると100～300msぐらい考える。
 		int rtime;
 
 		// 今回のgoコマンドでの探索ノード数
-		int64_t nodes;
+		uint64_t nodes;
 
 		// 入玉ルール設定
 		EnteringKingRule enteringKingRule;
@@ -117,9 +120,6 @@ namespace Search {
 		// 画面に出力しないサイレントモード(プロセス内での連続自己対戦のとき用)
 		// このときPVを出力しない。
 		bool silent;
-
-		// 試合開始後、ponderが一度でも送られてきたか
-		bool ponder_mode;
 
 		// 検討モード用のPVを出力するのか
 		bool consideration_mode;
@@ -131,16 +131,7 @@ namespace Search {
 		bool bench;
 	};
 
-	struct SignalsType {
-		// これがtrueになったら探索を即座に終了すること。
-		std::atomic_bool stop;
-	};
-
-	typedef std::unique_ptr<aligned_stack<StateInfo>> StateStackPtr;
-
-	extern SignalsType Signals;
 	extern LimitsType Limits;
-	extern StateStackPtr SetupStates;
 
 	// 探索部の初期化。
 	void init();
@@ -154,36 +145,15 @@ namespace Search {
 	// -----------------------
 
 	struct Stack {
-		Move* pv;				// PVへのポインター。RootMovesのvector<Move> pvを指している。
-		int ply;				// rootからの手数
-		Move currentMove;		// そのスレッドの探索においてこの局面で現在選択されている指し手
-		Move excludedMove;		// singular extension判定のときに置換表の指し手をそのnodeで除外して探索したいのでその除外する指し手
-		Move killers[2];		// killer move
-		Value staticEval;		// 評価関数を呼び出して得た値。NULL MOVEのときに親nodeでの評価値が欲しいので保存しておく。
-
-#if defined (PER_STACK_HISTORY)
-
-#if defined (USE_MOVE_PICKER_2017Q2)
-		int statScore;			// 一度計算したhistoryの合計値をcacheしておくのに用いる。
-#else
-		Value history;			// 一度計算したhistoryの合計値をcacheしておくのに用いる。
-#endif
-
-#endif
-
-#if defined(YANEURAOU_NANO_PLUS_ENGINE) || defined(YANEURAOU_MINI_ENGINE) || defined(YANEURAOU_CLASSIC_ENGINE) \
-	 || defined(YANEURAOU_CLASSIC_TCE_ENGINE) || defined(YANEURAOU_2016_MID_ENGINE) || defined(YANEURAOU_2016_LATE_ENGINE)
-
-		bool skipEarlyPruning;	// 指し手生成前に行なう枝刈りを省略するか。(NULL MOVEの直後など)
-#endif
-
-		int moveCount;          // このnodeでdo_move()した生成した何手目の指し手か。(1ならおそらく置換表の指し手だろう)
-
-#if defined (USE_MOVE_PICKER_2016Q2) || defined (USE_MOVE_PICKER_2016Q3)
-		CounterMoveStats* counterMoves; // MovePickerから使いたいのでここにCounterMoveStatsを格納することになった。
-#elif defined(USE_MOVE_PICKER_2017Q2)
-		PieceToHistory* history;		// history絡み、refactoringにより名前が変わった。
-#endif
+		Move* pv;					// PVへのポインター。RootMovesのvector<Move> pvを指している。
+		int ply;					// rootからの手数。rootならば0。
+		Move currentMove;			// そのスレッドの探索においてこの局面で現在選択されている指し手
+		Move excludedMove;			// singular extension判定のときに置換表の指し手をそのnodeで除外して探索したいのでその除外する指し手
+		Move killers[2];			// killer move
+		Value staticEval;			// 評価関数を呼び出して得た値。NULL MOVEのときに親nodeでの評価値が欲しいので保存しておく。
+		int statScore;				// 一度計算したhistoryの合計値をcacheしておくのに用いる。
+		int moveCount;				// このnodeでdo_move()した生成した何手目の指し手か。(1ならおそらく置換表の指し手だろう)
+		PieceToHistory* contHistory;// historyのうち、counter moveに関するhistoryへのポインタ。実体はThreadが持っている。
 	};
 
 } // end of namespace Search

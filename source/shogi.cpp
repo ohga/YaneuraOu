@@ -134,15 +134,27 @@ std::string to_usi_string(Move m)
 	return ss.str();
 }
 
+// 拡張USIプロトコルにおいてPVの出力に用いる。
+std::ostream& operator<<(std::ostream& os, RepetitionState rs)
+{
+	os << ((rs == REPETITION_NONE) ? "rep_none" : // これはデバッグ用であり、実際には出力はしない。
+		   (rs == REPETITION_WIN ) ? "rep_win" :
+		   (rs == REPETITION_LOSE) ? "rep_lose" :
+		   (rs == REPETITION_DRAW) ? "rep_draw" :
+		   (rs == REPETITION_SUPERIOR) ? "rep_sup" :
+		   (rs == REPETITION_INFERIOR) ? "rep_inf" :
+		"")
+		;
+	return os;
+}
+
 
 // ----------------------------------------
 // 探索用のglobalな変数
 // ----------------------------------------
 
 namespace Search {
-	SignalsType Signals;
 	LimitsType Limits;
-	StateStackPtr SetupStates;
 
 	// 探索を抜ける前にponderの指し手がないとき(rootでfail highしているだとか)にこの関数を呼び出す。
 	// ponderの指し手として何かを指定したほうが、その分、相手の手番において考えられて得なので。
@@ -228,13 +240,13 @@ static void validate_login_name(const std::string name)
 int main(int argc, char* argv[])
 {
 	// --- 全体的な初期化
-	USI::init(Options);
-	Bitboards::init();
-	Position::init();
-	Search::init();
-	Threads.init();
-	// 簡単な初期化のみで評価関数の読み込みはisreadyに応じて行なう。
-	Eval::init();
+    USI::init(Options);
+    Bitboards::init();
+    Position::init();
+    Search::init();
+    Threads.init(Options["Threads"]);
+    TT.resize(Options["Hash"]);
+    Eval::init();
 
 #if defined(GODWHALE_CLUSTER_SLAVE)
     if (argc > 3) {

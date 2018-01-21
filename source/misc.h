@@ -48,7 +48,18 @@ extern void start_logger(bool b);
 // ファイルを丸読みする。ファイルが存在しなくともエラーにはならない。空行はスキップする。
 extern int read_all_lines(std::string filename, std::vector<std::string>& lines);
 
+// msys2、Windows Subsystem for Linuxなどのgcc/clangでコンパイルした場合、
+// C++のstd::ifstreamで::read()は、一発で2GB以上のファイルの読み書きが出来ないのでそのためのwrapperである。
+//
+// read_file_to_memory()の引数のcallback_funcは、ファイルがオープン出来た時点でそのファイルサイズを引数として
+// callbackされるので、バッファを確保して、その先頭ポインタを返す関数を渡すと、そこに読み込んでくれる。
+// これらの関数は、ファイルが見つからないときなどエラーの際には非0を返す。
+//
+// また、callbackされた関数のなかでバッファが確保できなかった場合や、想定していたファイルサイズと異なった場合は、
+// nullptrを返せば良い。このとき、read_file_to_memory()は、読み込みを中断し、エラーリターンする。
 
+extern int read_file_to_memory(std::string filename, std::function<void*(u64)> callback_func);
+extern int write_memory_to_file(std::string filename, void *ptr, u64 size);
 
 // --------------------
 //  統計情報
@@ -83,7 +94,7 @@ inline TimePoint now() {
 // 指定されたミリ秒だけsleepする。
 inline void sleep(int ms)
 {
-	std::this_thread::sleep_for(std::chrono::microseconds(ms));
+	std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 }
 
 // 現在時刻を文字列化したもを返す。(評価関数の学習時などに用いる)
@@ -187,12 +198,13 @@ inline uint64_t get_thread_id()
 // UniformRandomNumberGenerator互換にして、std::shuffle()等でも使えるようにするべきか？
 struct PRNG
 {
-	PRNG(uint64_t seed) : s(seed) { ASSERT_LV1(seed); }
+	PRNG(u64 seed) : s(seed) { ASSERT_LV1(seed); }
 
-	// C++11のrandom_device()によるseedの初期化
+	// 時刻などでseedを初期化する。
 	PRNG() {
+		// C++11のrandom_device()によるseedの初期化
 		// std::random_device rd; s = (u64)rd() + ((u64)rd() << 32);
-		// msys2のgccでbuildすると同じ値を返すっぽい。なんぞこれ…。
+		// →　msys2のgccでbuildすると同じ値を返すっぽい。なんぞこれ…。
 
 		// time値とか、thisとか色々加算しておく。
 		s = (u64)(time(NULL)) + ((u64)(this) << 32)
@@ -203,15 +215,55 @@ struct PRNG
 	template<typename T> T rand() { return T(rand64()); }
 
 	// 0からn-1までの乱数を返す。(一様分布ではないが現実的にはこれで十分)
-	uint64_t rand(size_t n) { return rand<uint64_t>() % n; }
+	u64 rand(u64 n) { return rand<u64>() % n; }
+
+	// 内部で使用している乱数seedを返す。
+	u64 get_seed() const { return s;  }
 
 private:
-	uint64_t s;
-	uint64_t rand64() {
+	u64 s;
+	u64 rand64() {
 		s ^= s >> 12, s ^= s << 25, s ^= s >> 27;
 		return s * 2685821657736338717LL;
 	}
 };
+
+// 乱数のseedを表示する。(デバッグ用)
+inline std::ostream& operator<<(std::ostream& os, PRNG& prng)
+{
+	os << "PRNG::seed = " << std::hex << prng.get_seed() << std::dec;
+	return os;
+}
+
+// PRNGのasync版
+struct AsyncPRNG
+{
+	// [ASYNC] 乱数を一つ取り出す。
+	template<typename T> T rand() {
+		std::unique_lock<Mutex> lk(mutex);
+		return prng.rand<T>();
+	}
+
+	// [ASYNC] 0からn-1までの乱数を返す。(一様分布ではないが現実的にはこれで十分)
+	u64 rand(u64 n) {
+		std::unique_lock<Mutex> lk(mutex);
+		return prng.rand(n);
+	}
+
+	// 内部で使用している乱数seedを返す。
+	u64 get_seed() const { return prng.get_seed(); }
+
+protected:
+	Mutex mutex;
+	PRNG prng;
+};
+
+// 乱数のseedを表示する。(デバッグ用)
+inline std::ostream& operator<<(std::ostream& os, AsyncPRNG& prng)
+{
+	os << "AsyncPRNG::seed = " << std::hex << prng.get_seed() << std::dec;
+	return os;
+}
 
 // --------------------
 //       Math
@@ -241,6 +293,37 @@ inline std::string path_combine(const std::string& folder, const std::string& fi
 		return folder + "/" + filename;
 
 	return folder + filename;
+}
+
+// --------------------
+//       misc
+// --------------------
+
+// insertion sort
+// 昇順に並び替える。
+template <typename T >
+void my_insertion_sort(T* arr, int left, int right)
+{
+	for (int i = left + 1; i < right; i++)
+	{
+		auto key = arr[i];
+		int j = i - 1;
+
+		// keyより大きな arr[0..i-1]の要素を現在処理中の先頭へ。
+		while (j >= left && (arr[j] > key))
+		{
+			arr[j + 1] = arr[j];
+			j = j - 1;
+		}
+		arr[j + 1] = key;
+	}
+}
+
+// 途中での終了処理のためのwrapper
+static void my_exit()
+{
+	sleep(3000); // エラーメッセージが出力される前に終了するのはまずいのでwaitを入れておく。
+	exit(EXIT_FAILURE);
 }
 
 // --------------------

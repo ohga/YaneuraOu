@@ -275,14 +275,33 @@ extern ymm ymm_one;   // all packed bytes are 1.
 //    custom allocator
 // ----------------------------
 
-// C++11では、std::stack<StateInfo>がalignasを無視するために、代わりにstack相当のものを自作。
-template <typename T> struct aligned_stack {
-  void push(const T& t) { auto ptr = (T*)_mm_malloc(sizeof(T), alignof(T)); *ptr = t; container.push_back(ptr); }
-  T& top() const { return **container.rbegin(); }
-  void clear() { for (auto ptr : container) _mm_free(ptr); container.clear(); }
-  ~aligned_stack() { clear(); }
-private:
-  std::vector<T*> container;
+inline void* aligned_malloc(size_t size, size_t align)
+{
+	void* p = _mm_malloc(size, align);
+	if (p == nullptr)
+	{
+		std::cout << "info string can't allocate memory. sise = " << size << std::endl;
+		exit(1);
+	}
+	return p;
+}
+inline void aligned_free(void* ptr) { _mm_free(ptr); }
+
+// alignasを指定しているのにnewのときに無視される＆STLのコンテナがメモリ確保するときに無視するので、
+// そのために用いるカスタムアロケーター。
+template <typename T>
+class AlignedAllocator {
+public:
+	using value_type = T;
+
+	AlignedAllocator() {}
+	AlignedAllocator(const AlignedAllocator&) {}
+	AlignedAllocator(AlignedAllocator&&) {}
+
+	template <typename U> AlignedAllocator(const AlignedAllocator<U>&) {}
+
+	T* allocate(std::size_t n) { return (T*)aligned_malloc(n * sizeof(T), alignof(T)); }
+	void deallocate(T* p, std::size_t n) { aligned_free(p); }
 };
 
 // ----------------------------

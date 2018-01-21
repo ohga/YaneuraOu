@@ -4,6 +4,7 @@
 
 #include "../misc.h"
 #include "../search.h"
+#include "../thread.h"
 
 namespace {
 
@@ -19,11 +20,11 @@ namespace {
 // 今回の思考時間を計算して、optimum(),maximum()が値をきちんと返せるようにする。
 // これは探索の開始時に呼び出されて、今回の指し手のための思考時間を計算する。
 // limitsで指定された条件に基いてうまく計算する。
-
+// ply : ここまでの手数。平手の初期局面なら1。(0ではない)
 void Timer::init(Search::LimitsType& limits, Color us, int ply)
 {
 	// nodes as timeモード
-	int npmsec = Options["nodestime"];
+	int npmsec = (int)Options["nodestime"];
 
 	// npmsecがUSI optionで指定されていれば、時間の代わりに、ここで指定されたnode数をベースに思考を行なう。
 	// nodes per milli secondの意味。
@@ -48,23 +49,23 @@ void Timer::init(Search::LimitsType& limits, Color us, int ply)
 
 	// ネットワークのDelayを考慮して少し減らすべき。
 	// かつ、minimumとmaximumは端数をなくすべき
-	network_delay = Options["NetworkDelay"];
+	network_delay = (int)Options["NetworkDelay"];
 
 	// 探索終了予定時刻。このタイミングで初期化しておく。
 	search_end = 0;
 
 	// 今回の最大残り時間(これを超えてはならない)
-	remain_time = limits.time[us] + limits.byoyomi[us] - Options["NetworkDelay2"];
+	remain_time = limits.time[us] + limits.byoyomi[us] - (int)Options["NetworkDelay2"];
 	// ここを0にすると時間切れのあと自爆するのでとりあえず100にしておく。
 	remain_time = std::max(remain_time, 100);
 
 	// 最小思考時間
-	minimum_thinking_time = Options["MinimumThinkingTime"];
+	minimum_thinking_time = (int)Options["MinimumThinkingTime"];
 
 	// 序盤重視率
 	// 　これはこんなパラメーターとして手で調整するべきではなく、探索パラメーターの一種として
 	//   別の方法で調整すべき。ただ、対人でソフトに早指ししたいときには意味があるような…。
-	int slowMover = Options["SlowMover"];
+	int slowMover = (int)Options["SlowMover"];
 
 	if (limits.rtime)
 	{
@@ -84,7 +85,7 @@ void Timer::init(Search::LimitsType& limits, Color us, int ply)
 	}
 
 	// 残り手数
-	// plyは開始局面が1。
+	// plyは平手の初期局面が1。
 	// なので、256手ルールとして、max_game_ply == 256
 	// 256手目の局面においてply == 256
 	// その1手前の局面においてply == 255
@@ -133,6 +134,25 @@ void Timer::init(Search::LimitsType& limits, Color us, int ply)
 
 		// -- maximumTime
 		float max_ratio = 5.0f;
+
+#if	defined(YANEURAOU_2017_GOKU_ENGINE)
+
+		// 20手目までにそんなに大きな勝負所が来ることはあまりないので
+		// max_ratioとoptimumTimeを抑制しておく。(根拠は特にない)
+		//
+		// 自己対局などからこのへんの係数をうまく調整すべきだが、
+		// 自己対局フレームワーク(Python製)が、残り時間をきちんと管理していないので調整できない。
+		// あと定跡との相性とか、ponderがどれくらい当たるかだとか、そういう問題もあって簡単ではない。
+		//
+		// 今後の課題である…。[2017/11/03]
+
+		if (ply <= 20)
+		{
+			max_ratio = 3.0f;
+			optimumTime = int(optimumTime * 0.7f);
+		}
+#endif
+
 		// 切れ負けルールにおいては、5分を切っていたら、このratioを抑制する。
 		if (limits.inc[us] == 0 && limits.byoyomi[us] == 0)
 		{
@@ -152,7 +172,8 @@ void Timer::init(Search::LimitsType& limits, Color us, int ply)
 		maximumTime = std::min(t2, maximumTime);
 
 		// Ponderが有効になっている場合、ponderhitすると時間が本来の予測より余っていくので思考時間を心持ち多めにとっておく。
-		if (limits.ponder_mode)
+		// これ本当はゲーム開始時にUSIコマンドで送られてくるべきだと思う。USI 2.0を策定するか…。
+		if (Threads.received_go_ponder)
 			optimumTime += optimumTime / 4;
 	}
 

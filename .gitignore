@@ -3,8 +3,6 @@
 
 # added by yaneurao
 
-evaluate_experimental.*
-evaluate_ppap.h
 *.gitattributes
 # *.gitignore
 *.bat
@@ -12,9 +10,23 @@ evaluate_ppap.h
 YaneuraOu_backup*.lnk
 バージョン履歴.txt
 実験記録*.txt
+開発メモ2017.txt
+コマンドのメモ.txt
 *.bak
 *Private.*
 *.vspx
+*~
+~*
+
+# experimental
+
+evaluate_experimental.*
+evaluate_ppap*
+evaluate_nabla*
+evaluate_akashic*
+evaluate_helices*
+2017-goku-engine/
+gensfen2018*
 
 # cf. https://twitter.com/496_/status/673758920846917632
 YaneuraOu.VC.opendb
@@ -42,6 +54,7 @@ build/
 bld/
 [Bb]in/
 [Oo]bj/
+exe/
 
 # godwhale
 script-godwhale/exe-switcher

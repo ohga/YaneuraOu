@@ -9,7 +9,7 @@ using namespace Effect8;
 
 namespace {
 
-  // min_attacker()はsee()で使われるヘルパー関数であり、(目的升toに利く)
+  // min_attacker()はsee_ge()で使われるヘルパー関数であり、(目的升toに利く)
   // 手番側の最も価値の低い攻撃駒の場所を特定し、その見つけた駒をビットボードから取り除き
   // その背後にあった遠方駒をスキャンする。(あればstmAttackersに追加する)
 
@@ -144,7 +144,7 @@ namespace {
 // このseeの最終的な値が、vを以上になるかどうかを判定する。
 // こういう設計にすることで早期にvを超えないことが確定した時点でreturn出来る。
 
-bool Position::see_ge(Move m, Value v) const
+bool Position::see_ge(Move m, Value threshold) const
 {
 	// null windowのときのαβ探索に似たアルゴリズムを用いる。
 
@@ -160,29 +160,32 @@ bool Position::see_ge(Move m, Value v) const
 	// 成りなら成りを評価したほうが良い可能性があるが、このあとの取り合いで指し手の成りを評価していないので…。
 	Piece nextVictim = drop ? move_dropped_piece(m) : type_of(piece_on(from));
 
-	// 移動させる駒側のturnから始まるものとする。
+	// 以下のwhileで想定している手番。
+	// 移動させる駒側の手番から始まるものとする。
 	// 次に列挙すべきは、この駒を取れる敵の駒なので、相手番に。
+	// ※「stm」とは"side to move"(手番側)を意味する用語。
 	Color stm = ~color_of(moved_piece_after(m));
 
 	// 取り合いにおける収支。取った駒の価値と取られた駒の価値の合計。
 	Value balance = (Value)Eval::CapturePieceValue[piece_on(to)];
 
 	// この時点でマイナスになっているので早期にリターン。
-	if (balance < v)
+	if (balance < threshold)
 		return false;
 
-	// 王が取られる指し手は考慮しなくて良いので、これは取られないものとしてプラス収支であるから
-	// この時点でリターンできる。
-	if (nextVictim == KING)
-		return true;
+	// nextVictim == Kingの場合もある。玉が取られる指し手は考えなくて良いので
+	// この場合プラス収支と考えてよく、CapturePieceValue[KING] == 0が格納されているので
+	// 以下の式によりtrueが返る。
 
 	balance -= (Value)Eval::CapturePieceValue[nextVictim];
 
-	if (balance >= v)
+	if (balance >= threshold)
 		return true;
 
-	// true if the opponent is to move and false if we are to move
+	// 相手側の手番ならtrue、自分側の手番であるならfalse
 	bool relativeStm = true;
+
+	// いま、以下のwhileのなかで想定している手番側の、sqの地点に利く駒
 	Bitboard stmAttackers;
 
 	// 盤上の駒(取り合いしていくうちにここから駒が無くなっていく)
@@ -218,7 +221,7 @@ bool Position::see_ge(Move m, Value v) const
 							  : balance - (Value)Eval::CapturePieceValue[nextVictim];
 		relativeStm = !relativeStm;
 
-		if (relativeStm == (balance >= v))
+		if (relativeStm == (balance >= threshold))
 			return relativeStm;
 
 		stm = ~stm;
