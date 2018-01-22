@@ -6,8 +6,8 @@ YANEURAOU_EDITION = YANEURAOU_2018_OTAFUKU_ENGINE
 
 
 # clangでコンパイルしたほうがgccより数%速いっぽい。
-COMPILER = g++
-#COMPILER = clang++
+#COMPILER = g++
+COMPILER = clang++
 
 # 標準的なコンパイルオプション
 CFLAGS   = -std=c++14 -fno-exceptions -fno-rtti -Wextra -Ofast -MMD -MP -fpermissive
@@ -38,10 +38,10 @@ endif
 ifeq ($(OS),Windows_NT)
 	CFLAGS += $(WCFLAGS)
 	LDFLAGS += -static -Wl,--stack,100000000
-	TARGET = YaneuraOu-by-gcc.exe
+	TARGET = godwhale_child.exe
 else
 	CFLAGS += -D_LINUX -DGODWHALE_CLUSTER_SLAVE
-	TARGET = YaneuraOu-by-gcc
+	TARGET = godwhale_child
 endif
 
 # リンク時最適化。これをつけるとmsys2環境だとセグフォで落ちる。
