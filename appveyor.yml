@@ -1,0 +1,19 @@
+platform: x64
+
+environment:
+  matrix:
+    - TARGET: tournament
+    - TARGET: tournament-sse42
+
+install:
+  - set PATH=C:\msys64\mingw64\bin;C:\msys64\usr\local\bin;C:\msys64\usr\bin;C:\msys64\bin;%PATH%
+  - set MSYSTEM=MINGW64
+  - bash -lc "pacman --noconfirm -S base-devel msys2-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-clang git unzip mingw-w64-x86_64-boost"
+
+build_script:
+  - bash -lc "cd $APPVEYOR_BUILD_FOLDER; mkdir build && env && echo $TARGET && cd build && cmake -Dtarget=$TARGET -G 'Unix Makefiles' ../source && make -j `nproc` && mv godwhale_child.exe godwhale_child-${TARGET}.exe"
+
+artifacts:
+  - path: build/godwhale_child-${TARGET}.exe
+    name: nightly_build
+
