@@ -11,7 +11,15 @@ install:
   - bash -lc "pacman --noconfirm -S base-devel msys2-devel mingw-w64-x86_64-toolchain mingw-w64-x86_64-clang git unzip mingw-w64-x86_64-boost"
 
 build_script:
-  - bash -lc "cd $APPVEYOR_BUILD_FOLDER; mkdir build && env && echo $TARGET && cd build && cmake -Dtarget=$TARGET -G 'Unix Makefiles' ../source && make -j `nproc` && mv godwhale_child.exe godwhale_child-${TARGET}.exe"
+  - bash -lc "cd $APPVEYOR_BUILD_FOLDER; mkdir build && cd build && cmake -Dtarget=$TARGET -G 'Unix Makefiles' ../source && make -j `nproc`"
+
+before_test:
+  - bash -lc "cd $APPVEYOR_BUILD_FOLDER; cp build/godwhale_child.exe tests/ && mv build/godwhale_child.exe build/godwhale_child-${TARGET}.exe"
+
+after_test:
+
+test_script:
+  - bash -lc "cd $APPVEYOR_BUILD_FOLDER; cd tests/ && ./all.sh"
 
 artifacts:
   - path: build/godwhale_child-${TARGET}.exe

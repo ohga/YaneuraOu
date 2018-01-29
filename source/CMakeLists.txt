@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 set(CMAKE_CXX_COMPILER "clang++")
 add_definitions("-std=c++14 -fno-exceptions -fno-rtti -Wextra -Ofast -MMD -MP")
 add_definitions("-Wno-unused-parameter -D_LINUX -DGODWHALE_CLUSTER_SLAVE -DUSE_CMAKE")
-set(CMAKE_EXE_LINKER_FLAGS "-Wl,-s -v")
+set(CMAKE_EXE_LINKER_FLAGS "-v")
 
 if(NOT DEFINED target)
    set(target "tournament")
@@ -17,6 +17,7 @@ elseif(DEFINED target)
 endif()
 
 if (NOT "$ENV{MSYSTEM}" STREQUAL "")
+  set(CMAKE_EXE_LINKER_FLAGS "-Wl,--stack,100000000")
   add_definitions("-fno-threadsafe-statics -DUSE_MSYS2 -DBOOST_USE_WINDOWS_H -DBOOST_ERROR_CODE_HEADER_ONLY")
 endif()
 
