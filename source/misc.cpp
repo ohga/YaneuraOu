@@ -346,7 +346,9 @@ void prefetch2(void* addr)
 // --------------------
 //  全プロセッサを使う
 // --------------------
-
+#ifdef USE_MSYS2
+#undef _WIN32
+#endif
 namespace WinProcGroup {
 
 #if !defined ( _WIN32 )
@@ -492,3 +494,6 @@ namespace WinProcGroup {
 #endif
 
 } // namespace WinProcGroup
+#ifdef USE_MSYS2
+#define _WIN32
+#endif

@@ -24,7 +24,9 @@
 // ターゲットCPUのところだけdefineしてください。(残りは自動的にdefineされます。)
 
 //#define USE_AVX512
+#ifndef USE_CMAKE
 #define USE_AVX2
+#endif
 //#define USE_SSE42
 //#define USE_SSE41
 //#define USE_SSE2
@@ -765,5 +767,10 @@ inline int MKDIR(std::string dir_name)
 // ↑の関数のundo_move()時用。こちらは、評価関数の差分更新を行わない。(評価関数の値を巻き戻すのは簡単であるため)
 #define ADD_BOARD_EFFECT_REWIND(color_,sq_,e1_) { board_effect[color_].e[sq_] += (uint8_t)e1_; }
 #define ADD_BOARD_EFFECT_BOTH_REWIND(color_,sq_,e1_,e2_) { board_effect[color_].e[sq_] += (uint8_t)e1_; board_effect[~color_].e[sq_] += (uint8_t)e2_; }
+
+#ifdef USE_MSYS2
+//#undef USE_EVAL_HASH
+#undef USE_SHARED_MEMORY_IN_EVAL
+#endif
 
 #endif // _CONFIG_H_
