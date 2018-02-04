@@ -15,9 +15,9 @@ namespace boost
 // logging用のhack。streambufをこれでhookしてしまえば追加コードなしで普通に
 // cinからの入力とcoutへの出力をファイルにリダイレクトできる。
 // cf. http://groups.google.com/group/comp.lang.c++/msg/1d941c0f26ea0d81
-struct Tie : public std::streambuf
+struct Tee : public std::streambuf
 {
-    Tie(std::streambuf* buf_, std::streambuf* remote_) 
+    Tee(std::streambuf* buf_, std::streambuf* remote_) 
         : buf(buf_), remote(remote_), last('\n') {}
 
     int sync() { return buf->pubsync(), remote->pubsync(); }
@@ -68,8 +68,8 @@ struct Tie : public std::streambuf
 struct GodwhaleIO
 {
     GodwhaleIO()
-        : cinbuf(std::cout.rdbuf()), coutbuf(std::cin.rdbuf())
-        , in(std::cout.rdbuf(), &sockstream)
+        : cinbuf(nullptr), coutbuf(nullptr)
+        , in(std::cin.rdbuf(), &sockstream)
         , out(std::cout.rdbuf(), &sockstream) {}
     ~GodwhaleIO() { close(); }
 
@@ -84,14 +84,20 @@ struct GodwhaleIO
         }
 
         std::cout << "succeeded to connect" << std::endl;
-        std::cin.rdbuf(&in);
-        std::cout.rdbuf(&out);
+        cinbuf = std::cin.rdbuf(&in);
+        coutbuf = std::cout.rdbuf(&out);
     }
 
     void close() {
         if (sockstream.is_open()) {
-            std::cout.rdbuf(coutbuf);
-            std::cin.rdbuf(cinbuf);
+            if (coutbuf != nullptr) {
+                std::cout.rdbuf(coutbuf);
+                coutbuf = nullptr;
+            }
+            if (cinbuf != nullptr) {
+                std::cin.rdbuf(cinbuf);
+                cinbuf = nullptr;
+            }
             sockstream.close();
             std::cout << "connection closed" << std::endl;
         }
@@ -100,7 +106,7 @@ struct GodwhaleIO
 private:
     boost::asio::asio_socket_streambuf<boost::asio::ip::tcp> sockstream;
     std::streambuf *cinbuf, *coutbuf;
-    Tie in, out; // 標準入力とファイル、標準出力とファイルのひも付け
+    Tee in, out; // 標準入力とファイル、標準出力とファイルのひも付け
 };
 
 
