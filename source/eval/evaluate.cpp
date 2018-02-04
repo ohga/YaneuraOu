@@ -75,6 +75,7 @@ namespace Eval
 			{ 0x0000d6799926233 , "ShinYane(20161010)"    } , // 真やねうら王 = やねうら王(2016)
 			{ 0x0000da0f36d1b4b , "Apery(WCSC26)"         } , // Apery(WCSC26)
 			{ 0x0000d7213c45779 , "Ukamuse(sdt4)"         } , // 浮かむ瀬     = Apery(sdt4)
+            { 0x0000cc200376c52 , "Apery(sdt5)"           } , // Apery sdt5
 
 			{ 0x0000c9e81cef72b , "elmo(WCSC27)"          } , // elmo(WCSC27)
 			{ 0x0000900f1fbe7a6 , "Yomita(WCSC27)"        } , // 読み太(WCSC27)   

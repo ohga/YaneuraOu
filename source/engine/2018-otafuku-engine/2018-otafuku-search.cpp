@@ -2864,7 +2864,15 @@ ID_END:;
 		// sync_cout～sync_endlで全体を挟んでいるのでここを実行中に他スレッドの出力が割り込んでくる余地はない。
 
 		// ベストなスレッドの指し手を返す。
-		sync_cout << "bestmove " << bestThread->rootMoves[0].pv[0];
+        sync_cout << "bestmove ";
+
+#if defined(GODWHALE_CLUSTER_SLAVE)
+        if (IsGodwhaleMode) {
+            std::cout << "id " << bestThread->rootPos.id << " ";
+        }
+#endif
+
+        std::cout << bestThread->rootMoves[0].pv[0];
 
 		// ponderの指し手の出力。
 		// pvにはbestmoveのときの読み筋(PV)が格納されているので、ponderとしてpv[1]があればそれを出力してやる。
