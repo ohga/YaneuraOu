@@ -5,7 +5,8 @@
 #include "godwhale_io.hpp"
 
 #include <boost/asio/ip/tcp.hpp>
-#include "asio_socket_streambuf.hpp"
+#include <boost/asio/basic_socket_streambuf.hpp>
+//#include "asio_socket_streambuf.hpp"
 
 namespace boost
 {
@@ -104,7 +105,7 @@ struct GodwhaleIO
     }
 
 private:
-    boost::asio::asio_socket_streambuf<boost::asio::ip::tcp> sockstream;
+    boost::asio::basic_socket_streambuf<boost::asio::ip::tcp> sockstream;
     std::streambuf *cinbuf, *coutbuf;
     Tee in, out; // 標準入力とファイル、標準出力とファイルのひも付け
 };
