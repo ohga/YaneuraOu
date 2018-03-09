@@ -412,16 +412,16 @@ Move MovePicker::next_move2() {
 	// (置換表の指し手とkillerの指し手は返したあとなのでこれらの指し手は除外する必要がある)
 	// ※　これ、指し手の数が多い場合、AVXを使って一気に削除しておいたほうが良いのでは..
 	case QUIET:
-		while (cur < endMoves
-			&& (!skipQuiets || cur->value >= VALUE_ZERO))
-		{
-			move = *cur++;
-			if (move != ttMove
-				&& move != killers[0]
-				&& move != killers[1]
-				&& move != countermove)
-				return move;
-		}
+		if (!skipQuiets)
+			while (cur < endMoves)
+			{
+				move = *cur++;
+				if (move != ttMove
+					&& move != killers[0]
+					&& move != killers[1]
+					&& move != countermove)
+					return move;
+			}
 		++stage;
 
 		// bad capturesの先頭を指すようにする。これは指し手生成バッファの先頭付近を再利用している。
