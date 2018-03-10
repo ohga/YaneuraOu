@@ -156,7 +156,7 @@ namespace YaneuraOu2017GOKU
 
 	// Razoringのdepthに応じたマージン値
 	// RazorMargin[0]は、search()のなかでは depth >= ONE_PLY であるから使われない。
-	const int RazorMargin = 600;
+	const int RazorMargin = 590;
 
 	// depth(残り探索深さ)に応じたfutility margin。
 	Value futility_margin(Depth d) { return Value( PARAM_FUTILITY_MARGIN_ALPHA * d / ONE_PLY); }
@@ -1121,7 +1121,7 @@ namespace YaneuraOu2017GOKU
 
 		// 残り探索深さが少ないときに、その手数でalphaを上回りそうにないとき用の枝刈り。
 		if (   !PvNode
-			&&  depth < 4 * ONE_PLY
+			&&  depth < 3 * ONE_PLY
 			&&  eval + RazorMargin <= alpha)
 		{
 
