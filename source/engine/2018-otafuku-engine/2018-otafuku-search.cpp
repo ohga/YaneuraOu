@@ -161,7 +161,9 @@ namespace YaneuraOu2017GOKU
 	const int RazorMargin2r = 594;
 
 	// depth(残り探索深さ)に応じたfutility margin。
-	Value futility_margin(Depth d) { return Value( PARAM_FUTILITY_MARGIN_ALPHA * d / ONE_PLY); }
+	Value futility_margin(Depth d, bool improving) {
+    	return Value((175 - 50 * improving) * d / ONE_PLY);
+	}
 
 	// 残り探索depthが少なくて、王手がかかっていなくて、王手にもならないような指し手を
 	// 枝刈りしてしまうためのmoveCountベースのfutilityで用いるテーブル
@@ -1149,9 +1151,11 @@ namespace YaneuraOu2017GOKU
 		// ただし、将棋の終盤では評価値の変動の幅は大きくなっていくので、進行度に応じたfutility_marginが必要となる。
 		// ここでは進行度としてgamePly()を用いる。このへんはあとで調整すべき。
 
+    
+
 		if (   !RootNode
 			&&  depth < PARAM_FUTILITY_RETURN_DEPTH * ONE_PLY
-			&&  eval - futility_margin(depth) >= beta
+			&&  eval - futility_margin(depth, (ss->staticEval >= (ss-2)->staticEval || (ss-2)->staticEval == VALUE_NONE)) >= beta
 			&&  eval < VALUE_KNOWN_WIN) // 詰み絡み等だとmate distance pruningで枝刈りされるはずで、ここでは枝刈りしない。
 			return eval;
 		// 次のようにするより、単にevalを返したほうが良いらしい。
