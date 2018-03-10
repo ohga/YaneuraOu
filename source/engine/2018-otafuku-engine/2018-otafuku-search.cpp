@@ -1123,19 +1123,19 @@ namespace YaneuraOu2017GOKU
 
 		// 残り探索深さが少ないときに、その手数でalphaを上回りそうにないとき用の枝刈り。
 		if (   !PvNode
-			&&  depth <= ONE_PLY)
+			&&  depth <= 2 * ONE_PLY)
 		{
-			if (eval + RazorMargin1 <= alpha)
+			if (   depth == ONE_PLY
+				&& eval + RazorMargin1 <= alpha)
 				return qsearch<NonPV, false>(pos, ss, alpha, alpha+1);
-		}
-		else if ( !PvNode
-				&&  depth <= 2 * ONE_PLY
-				&&  eval + RazorMargin2 <= alpha)
-		{
-			Value ralpha = alpha - RazorMargin2r;
-			Value v = qsearch<NonPV, false>(pos, ss, ralpha, ralpha+1);
-			if (v <= ralpha)
-				return v;
+			else if (eval + RazorMargin2 <= alpha)
+			{
+				Value ralpha = alpha - RazorMargin2;
+				Value v = qsearch<NonPV, false>(pos, ss, ralpha, ralpha+1);
+
+				if (v <= ralpha)
+					return v;
+			}
 		}
 
 		// -----------------------
@@ -1251,7 +1251,7 @@ namespace YaneuraOu2017GOKU
 
 					// Perform a preliminary depth one search to verify that the move holds. We will only do
 					// this search if the depth is not five, thus avoiding two depth one searches in a row
-					if (depth != 5 * ONE_PLY)
+					if (depth > 5 * ONE_PLY)
 					    value = -search<NonPV>(pos, ss+1, -rbeta, -rbeta+1, ONE_PLY, !cutNode, true);
 
 					// If the first search was skipped or was performed and held, perform the regular search
