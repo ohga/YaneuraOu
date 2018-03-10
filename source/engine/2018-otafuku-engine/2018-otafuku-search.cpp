@@ -1238,12 +1238,16 @@ namespace YaneuraOu2017GOKU
 			// rbeta - ss->staticEvalを上回るcaptureの指し手のみを生成。
 			MovePicker mp(pos, ttMove, rbeta - ss->staticEval);
 
-			while ((move = mp.next_move()) != MOVE_NONE)
+			int probCutCount = 0;
+			while (  (move = mp.next_move()) != MOVE_NONE
+					&& probCutCount < depth / ONE_PLY - 3)
 			{
 				ASSERT_LV3(pos.pseudo_legal(move));
 
 				if (pos.legal(move))
 				{
+					probCutCount++;
+
 					ss->currentMove = move;
 					ss->contHistory = &thisThread->counterMoveHistory[to_sq(move)][pos.moved_piece_after(move)];
 
