@@ -156,7 +156,9 @@ namespace YaneuraOu2017GOKU
 
 	// Razoringのdepthに応じたマージン値
 	// RazorMargin[0]は、search()のなかでは depth >= ONE_PLY であるから使われない。
-	const int RazorMargin = 590;
+	const int RazorMargin1 = 590;
+	const int RazorMargin2 = 614;
+	const int RazorMargin2r = 594;
 
 	// depth(残り探索深さ)に応じたfutility margin。
 	Value futility_margin(Depth d) { return Value( PARAM_FUTILITY_MARGIN_ALPHA * d / ONE_PLY); }
@@ -1121,23 +1123,17 @@ namespace YaneuraOu2017GOKU
 
 		// 残り探索深さが少ないときに、その手数でalphaを上回りそうにないとき用の枝刈り。
 		if (   !PvNode
-			&&  depth < 3 * ONE_PLY
-			&&  eval + RazorMargin <= alpha)
+			&&  depth <= ONE_PLY)
 		{
-
-			// 残り探索深さがONE_PLY以下で、alphaを確実に下回りそうなら、ここで静止探索を呼び出してしまう。
-			if (depth <= ONE_PLY
-			//	&& eval + RazorMargin[3] <= alpha
-				// →　ここ、razoringとしてはRazorMargin[ZERO_DEPTH]を参照すべき。
-				// しかしそれは前提条件として満たしているので結局、ここでは単にqsearch()を
-				// 呼び出して良いように思う。
-				)
-				return qsearch<NonPV, false>(pos, ss, alpha, alpha + 1);
-
-			// 残り探索深さが1～3手ぐらいあるときに、alpha - RazorMarginを上回るかだけ調べて
-			// 上回りそうにないならもうリターンする。
-			Value ralpha = alpha - RazorMargin;
-			Value v = qsearch<NonPV, false>(pos, ss, ralpha, ralpha + 1);
+			if (eval + RazorMargin1 <= alpha)
+				return qsearch<NonPV, false>(pos, ss, alpha, alpha+1);
+		}
+		else if ( !PvNode
+				&&  depth <= 2 * ONE_PLY
+				&&  eval + RazorMargin2 <= alpha)
+		{
+			Value ralpha = alpha - RazorMargin2r;
+			Value v = qsearch<NonPV, false>(pos, ss, ralpha, ralpha+1);
 			if (v <= ralpha)
 				return v;
 		}
