@@ -156,8 +156,8 @@ namespace YaneuraOu2017GOKU
 
 	// Razoringのdepthに応じたマージン値
 	// razor_margin[0]は、search()のなかでは depth >= ONE_PLY であるから使われない。
-	int razor_margin[4];
-	
+	const int razor_margin = 600;
+
 	// depth(残り探索深さ)に応じたfutility margin。
 	Value futility_margin(Depth d) { return Value( PARAM_FUTILITY_MARGIN_ALPHA * d / ONE_PLY); }
 
@@ -1122,7 +1122,7 @@ namespace YaneuraOu2017GOKU
 		// 残り探索深さが少ないときに、その手数でalphaを上回りそうにないとき用の枝刈り。
 		if (   !PvNode
 			&&  depth < 4 * ONE_PLY
-			&&  eval + razor_margin[depth/ONE_PLY] <= alpha)
+			&&  eval + razor_margin <= alpha)
 		{
 
 			// 残り探索深さがONE_PLY以下で、alphaを確実に下回りそうなら、ここで静止探索を呼び出してしまう。
@@ -1136,7 +1136,7 @@ namespace YaneuraOu2017GOKU
 
 			// 残り探索深さが1～3手ぐらいあるときに、alpha - razor_marginを上回るかだけ調べて
 			// 上回りそうにないならもうリターンする。
-			Value ralpha = alpha - razor_margin[depth/ONE_PLY];
+			Value ralpha = alpha - razor_margin;
 			Value v = qsearch<NonPV, false>(pos, ss, ralpha, ralpha + 1);
 			if (v <= ralpha)
 				return v;
@@ -2240,10 +2240,10 @@ void Search::clear()
 
 	// razor marginの初期化
 
-	razor_margin[0] = PARAM_RAZORING_MARGIN1; // 未使用
-	razor_margin[1] = PARAM_RAZORING_MARGIN2;
-	razor_margin[2] = PARAM_RAZORING_MARGIN3;
-	razor_margin[3] = PARAM_RAZORING_MARGIN4;
+	// razor_margin[0] = PARAM_RAZORING_MARGIN1; // 未使用
+	// razor_margin[1] = PARAM_RAZORING_MARGIN2;
+	// razor_margin[2] = PARAM_RAZORING_MARGIN3;
+	// razor_margin[3] = PARAM_RAZORING_MARGIN4;
 
 	// -----------------------
 	//   定跡の読み込み
