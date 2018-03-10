@@ -826,7 +826,7 @@ namespace YaneuraOu2017GOKU
 		// -----------------------
 
 		// historyの合計値を計算してcacheしておく用。
-		ss->statScore = 0;
+		(ss+1)->statScore = 0;
 
 		// rootからの手数
 		ASSERT_LV3(0 <= ss->ply && ss->ply < MAX_PLY);
