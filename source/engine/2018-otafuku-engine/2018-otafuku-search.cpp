@@ -1172,7 +1172,7 @@ namespace YaneuraOu2017GOKU
 		if (   !PvNode
 			&&  eval >= beta
 			&& (ss->staticEval >= beta - PARAM_NULL_MOVE_MARGIN * (depth / ONE_PLY - 6) || depth >= 13 * ONE_PLY)
-			&& (ss->ply >= thisThread->nmp_ply || ss->ply % 2 == thisThread->pair)
+			&& (ss->ply >= thisThread->nmp_ply || ss->ply % 2 != thisThread->nmp_odd)
 			)
 		{
 			ASSERT_LV3(eval - beta >= 0);
@@ -1200,22 +1200,18 @@ namespace YaneuraOu2017GOKU
 				if (nullValue >= VALUE_MATE_IN_MAX_PLY)
 					nullValue = beta;
 
-				if (depth < PARAM_NULL_MOVE_RETURN_DEPTH * ONE_PLY && abs(beta) < VALUE_KNOWN_WIN)
+				if (abs(beta) < VALUE_KNOWN_WIN && (depth < PARAM_NULL_MOVE_RETURN_DEPTH * ONE_PLY || thisThread->nmp_ply))
 					return nullValue;
 
-				R += ONE_PLY;
 				// disable null move pruning for side to move for the first part of the remaining search tree
-				int nmp_ply = thisThread->nmp_ply;
-				int pair = thisThread->pair;
 				thisThread->nmp_ply = ss->ply + 3 * (depth-R) / 4;
-				thisThread->pair = (ss->ply % 2) == 0;
+				thisThread->nmp_odd = ss->ply % 2;
 
 				// nullMoveせずに(現在のnodeと同じ手番で)同じ深さで探索しなおして本当にbetaを超えるか検証する。cutNodeにしない。
 				Value v = depth - R < ONE_PLY ? qsearch<NonPV, false>(pos, ss, beta - 1, beta)
 											  :  search<NonPV       >(pos, ss, beta - 1, beta, depth - R, false , true);
 
-				thisThread->pair = pair;
-				thisThread->nmp_ply = nmp_ply;
+				thisThread->nmp_odd = thisThread->nmp_ply = 0;
 
 				if (v >= beta)
 					return nullValue;

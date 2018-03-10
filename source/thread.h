@@ -94,7 +94,7 @@ public:
 	// rootから最大、何手目まで探索したか(選択深さの最大)
 	int selDepth;
 
-	int nmp_ply, pair;
+	int nmp_ply, nmp_odd;
 
 	// このスレッドが探索したノード数(≒Position::do_move()を呼び出した回数)
 	std::atomic<uint64_t> nodes;

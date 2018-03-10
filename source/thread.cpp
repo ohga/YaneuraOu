@@ -167,8 +167,7 @@ void ThreadPool::start_thinking(const Position& pos, StateListPtr& states ,
 		// setupStatesを渡して、これをコピーしておかないと局面を遡れない。
 		th->rootPos.set(sfen, &setupStates->back(), th);
 
-		th->nmp_ply = 0;
-		th->pair = -1;
+		th->nmp_ply = th->nmp_odd = 0;
 
         // setの後にidの設定を行う。
 #if defined(GODWHALE_CLUSTER_SLAVE)
