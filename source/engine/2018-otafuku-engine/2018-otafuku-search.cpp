@@ -151,12 +151,12 @@ namespace YaneuraOu2017GOKU
 	//  Lazy SMPで用いるテーブル
 
 	// スレッド間の探索深さを分散させるために使用されるスキップブロックに対するsizeとphase。
-	const int skipSize[]  = { 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4 };
-	const int skipPhase[] = { 0, 1, 0, 1, 2, 3, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 6, 7 };
+	const int SkipSize[]  = { 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4 };
+	const int SkipPhase[] = { 0, 1, 0, 1, 2, 3, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 6, 7 };
 
 	// Razoringのdepthに応じたマージン値
-	// razor_margin[0]は、search()のなかでは depth >= ONE_PLY であるから使われない。
-	const int razor_margin = 600;
+	// RazorMargin[0]は、search()のなかでは depth >= ONE_PLY であるから使われない。
+	const int RazorMargin = 600;
 
 	// depth(残り探索深さ)に応じたfutility margin。
 	Value futility_margin(Depth d) { return Value( PARAM_FUTILITY_MARGIN_ALPHA * d / ONE_PLY); }
@@ -263,7 +263,7 @@ namespace YaneuraOu2017GOKU
 	// move      = これが良かった指し手
 	// quiets    = 悪かった指し手(このnodeで生成した指し手)
 	// quietsCnt = ↑の数
-	inline void update_stats(const Position& pos, Stack* ss, Move move,
+	inline void update_quiet_stats(const Position& pos, Stack* ss, Move move,
 				Move* quiets, int quietsCnt, int bonus)
 	{
 		//   killerのupdate
@@ -913,7 +913,7 @@ namespace YaneuraOu2017GOKU
 #else
 					if (!pos.capture_or_pawn_promotion(ttMove))
 #endif
-						update_stats(pos, ss, ttMove, nullptr, 0, stat_bonus(depth));
+						update_quiet_stats(pos, ss, ttMove, nullptr, 0, stat_bonus(depth));
 
 					// 反駁された1手前の置換表のquietな指し手に対する追加ペナルティを課す。
 					// 1手前は置換表の指し手であるのでNULL MOVEではありえない。
@@ -1035,7 +1035,7 @@ namespace YaneuraOu2017GOKU
 		}
 
 		// -----------------------
-		// Step 5. Evaluate the position statically
+		// Step 6. Evaluate the position statically
 		// -----------------------
 
 		//  局面を評価値によって静的に評価
@@ -1114,7 +1114,7 @@ namespace YaneuraOu2017GOKU
 		// 王手のときはここにはこない。(上のinCheckのなかでMOVES_LOOPに突入。)
 
 		// -----------------------
-		// Step 6. Razoring (skipped when in check)
+		// Step 7. Razoring (skipped when in check)
 		// -----------------------
 
 		//  Razoring (王手がかかっているときはスキップする)
@@ -1122,28 +1122,28 @@ namespace YaneuraOu2017GOKU
 		// 残り探索深さが少ないときに、その手数でalphaを上回りそうにないとき用の枝刈り。
 		if (   !PvNode
 			&&  depth < 4 * ONE_PLY
-			&&  eval + razor_margin <= alpha)
+			&&  eval + RazorMargin <= alpha)
 		{
 
 			// 残り探索深さがONE_PLY以下で、alphaを確実に下回りそうなら、ここで静止探索を呼び出してしまう。
 			if (depth <= ONE_PLY
-			//	&& eval + razor_margin[3] <= alpha
-				// →　ここ、razoringとしてはrazor_margin[ZERO_DEPTH]を参照すべき。
+			//	&& eval + RazorMargin[3] <= alpha
+				// →　ここ、razoringとしてはRazorMargin[ZERO_DEPTH]を参照すべき。
 				// しかしそれは前提条件として満たしているので結局、ここでは単にqsearch()を
 				// 呼び出して良いように思う。
 				)
 				return qsearch<NonPV, false>(pos, ss, alpha, alpha + 1);
 
-			// 残り探索深さが1～3手ぐらいあるときに、alpha - razor_marginを上回るかだけ調べて
+			// 残り探索深さが1～3手ぐらいあるときに、alpha - RazorMarginを上回るかだけ調べて
 			// 上回りそうにないならもうリターンする。
-			Value ralpha = alpha - razor_margin;
+			Value ralpha = alpha - RazorMargin;
 			Value v = qsearch<NonPV, false>(pos, ss, ralpha, ralpha + 1);
 			if (v <= ralpha)
 				return v;
 		}
 
 		// -----------------------
-		// Step 7. Futility pruning: child node (skipped when in check)
+		// Step 8. Futility pruning: child node (skipped when in check)
 		// -----------------------
 
 		//   Futility pruning : 子ノード (王手がかかっているときはスキップする)
@@ -1163,7 +1163,7 @@ namespace YaneuraOu2017GOKU
 		// cf. Simplify futility pruning return value : https://github.com/official-stockfish/Stockfish/commit/f799610d4bb48bc280ea7f58cd5f78ab21028bf5
 
 		// -----------------------
-		// Step 8. Null move search with verification search (is omitted in PV nodes)
+		// Step 9. Null move search with verification search (is omitted in PV nodes)
 		// -----------------------
 
 		//  検証用の探索つきのnull move探索。PV nodeではやらない。
@@ -1219,7 +1219,7 @@ namespace YaneuraOu2017GOKU
 		}
 
 		// -----------------------
-		// Step 9. ProbCut (skipped when in check)
+		// Step 10. ProbCut (skipped when in check)
 		// -----------------------
 
 		// ProbCut(王手のときはスキップする)
@@ -1261,7 +1261,7 @@ namespace YaneuraOu2017GOKU
 		}
 
 		// -----------------------
-		// Step 10. Internal iterative deepening (skipped when in check)
+		// Step 11. Internal iterative deepening (skipped when in check)
 		// -----------------------
 
 		// 多重反復深化 (王手のときはこの処理はスキップする)
@@ -1360,7 +1360,7 @@ namespace YaneuraOu2017GOKU
 		bool pvExact = PvNode && ttHit && tte->bound() == BOUND_EXACT;
 
 		// -----------------------
-		// Step 11. Loop through moves
+		// Step 12. Loop through moves
 		// -----------------------
 
 		//  一手ずつ調べていく
@@ -1424,7 +1424,7 @@ namespace YaneuraOu2017GOKU
 
 
 			// -----------------------
-			// Step 12. Singular and Gives Check Extensions.
+			// Step 13. Singular and Gives Check Extensions.
 			// -----------------------
 
 			// singular延長と王手延長。
@@ -1504,7 +1504,7 @@ namespace YaneuraOu2017GOKU
 			Depth newDepth = depth - ONE_PLY + extension;
 
 			// -----------------------
-			// Step 13. Pruning at shallow depth
+			// Step 14. Pruning at shallow depth
 			// -----------------------
 
 			// 浅い深さでの枝刈り
@@ -1621,14 +1621,14 @@ namespace YaneuraOu2017GOKU
 			ss->contHistory = &thisThread->counterMoveHistory[movedSq][movedPiece];
 
 			// -----------------------
-			// Step 14. Make the move
+			// Step 15. Make the move
 			// -----------------------
 
 			// 指し手で1手進める
 			pos.do_move(move, st, givesCheck);
 
 			// -----------------------
-			// // Step 15. Reduced depth search (LMR).
+			// // Step 16. Reduced depth search (LMR).
 			// -----------------------
 
 			// depthを減らした探索。LMR(Late Move Reduction)
@@ -1743,7 +1743,7 @@ namespace YaneuraOu2017GOKU
 			}
 
 			// -----------------------
-			// Step 16. Full depth search when LMR is skipped or fails high
+			// Step 17. Full depth search when LMR is skipped or fails high
 			// -----------------------
 
 			// Full depth search。LMRがskipされたか、LMRにおいてfail highを起こしたなら元の探索深さで探索する。
@@ -1772,7 +1772,7 @@ namespace YaneuraOu2017GOKU
 			}
 
 			// -----------------------
-			// Step 17. Undo move
+			// Step 18. Undo move
 			// -----------------------
 
 			//      1手戻す
@@ -1782,7 +1782,7 @@ namespace YaneuraOu2017GOKU
 			ASSERT_LV3(-VALUE_INFINITE < value && value < VALUE_INFINITE);
 
 			// -----------------------
-			// Step 18. Check for a new best move
+			// Step 19. Check for a new best move
 			// -----------------------
 
 			// 指し手を探索するのを終了する。
@@ -1903,10 +1903,10 @@ namespace YaneuraOu2017GOKU
 		{
 			// quietな(駒を捕獲しない)best moveなのでkillerとhistoryとcountermovesを更新する。
 
-			// 【計測資料 13.】quietな指し手に対するupdate_stats
+			// 【計測資料 13.】quietな指し手に対するupdate_quiet_stats
 
 			if (!pos.capture_or_pawn_promotion(bestMove))
-				update_stats(pos, ss, bestMove, quietsSearched, quietCount, stat_bonus(depth));
+				update_quiet_stats(pos, ss, bestMove, quietsSearched, quietCount, stat_bonus(depth));
 
 			// 反駁された1手前の置換表のquietな指し手に対する追加ペナルティを課す。
 			// 1手前は置換表の指し手であるのでNULL MOVEではありえない。
@@ -2240,10 +2240,10 @@ void Search::clear()
 
 	// razor marginの初期化
 
-	// razor_margin[0] = PARAM_RAZORING_MARGIN1; // 未使用
-	// razor_margin[1] = PARAM_RAZORING_MARGIN2;
-	// razor_margin[2] = PARAM_RAZORING_MARGIN3;
-	// razor_margin[3] = PARAM_RAZORING_MARGIN4;
+	// RazorMargin[0] = PARAM_RAZORING_MARGIN1; // 未使用
+	// RazorMargin[1] = PARAM_RAZORING_MARGIN2;
+	// RazorMargin[2] = PARAM_RAZORING_MARGIN3;
+	// RazorMargin[3] = PARAM_RAZORING_MARGIN4;
 
 	// -----------------------
 	//   定跡の読み込み
@@ -2367,10 +2367,10 @@ void Thread::search()
 
 		// idx : スレッド番号。main threadならば0。
 		// slave threadには、main threadより少し深い深さを探索させたい。
-		if (idx)
+		if (idx > 0)
 		{
 			int i = (idx - 1) % 20;
-			if (((rootDepth / ONE_PLY + rootPos.game_ply() + skipPhase[i]) / skipSize[i]) % 2)
+			if (((rootDepth / ONE_PLY + rootPos.game_ply() + SkipPhase[i]) / SkipSize[i]) % 2)
 				continue;
 		}
 
