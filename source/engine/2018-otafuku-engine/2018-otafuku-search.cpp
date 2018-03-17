@@ -754,6 +754,8 @@ namespace YaneuraOu2017GOKU
 		// この局面に対する評価値の見積り。
 		Value eval;
 
+		bool improving;
+
 		// -----------------------
 		// Step 1. Initialize node
 		// -----------------------
@@ -1057,6 +1059,7 @@ namespace YaneuraOu2017GOKU
 			// このnodeでは評価値を用いないであろうから、置換表にこのnodeの評価値があることに意味がない。
 
 			ss->staticEval = eval = VALUE_NONE;
+			improving = false;
 			goto moves_loop;
 
 		}
@@ -1105,6 +1108,8 @@ namespace YaneuraOu2017GOKU
 			// どうせ毎node評価関数を呼び出すので、evalの値にそんなに価値はないのだが、mate1ply()を
 			// 実行したという証にはなるので意味がある。
 		}
+
+		improving = ss->staticEval >= (ss-2)->staticEval || (ss-2)->staticEval == VALUE_NONE;
 
 		// このnodeで指し手生成前の枝刈りを省略するなら指し手生成ループへ。
 		if (skipEarlyPruning)
@@ -1155,7 +1160,7 @@ namespace YaneuraOu2017GOKU
 
 		if (   !RootNode
 			&&  depth < PARAM_FUTILITY_RETURN_DEPTH * ONE_PLY
-			&&  eval - futility_margin(depth, (ss->staticEval >= (ss-2)->staticEval || (ss-2)->staticEval == VALUE_NONE)) >= beta
+			&&  eval - futility_margin(depth, improving) >= beta
 			&&  eval < VALUE_KNOWN_WIN) // 詰み絡み等だとmate distance pruningで枝刈りされるはずで、ここでは枝刈りしない。
 			return eval;
 		// 次のようにするより、単にevalを返したほうが良いらしい。
@@ -1231,7 +1236,7 @@ namespace YaneuraOu2017GOKU
 			&&  depth >= PARAM_PROBCUT_DEPTH * ONE_PLY
 			&&  abs(beta) < VALUE_MATE_IN_MAX_PLY)
 		{
-			Value rbeta = std::min(beta + PARAM_PROBCUT_MARGIN, VALUE_INFINITE);
+			Value rbeta = std::min(beta + 216 - 48 * improving, VALUE_INFINITE);
 
 			// 大胆に探索depthを減らす
 			Depth rdepth = depth - (PARAM_PROBCUT_DEPTH - 1) * ONE_PLY;
@@ -1306,11 +1311,11 @@ namespace YaneuraOu2017GOKU
 		// 上がって行っているなら枝刈りを甘くする。
 		// ※ VALUE_NONEの場合は、王手がかかっていてevaluate()していないわけだから、
 		//   枝刈りを甘くして調べないといけないのでimproving扱いとする。
-		bool improving = ss->staticEval >= (ss - 2)->staticEval
+		// bool improving = ss->staticEval >= (ss - 2)->staticEval
 		//			  || ss->staticEval == VALUE_NONE
 		// この条件は一つ上の式に暗黙的に含んでいる。
 		// ※　VALUE_NONE == 32002なのでこれより大きなstaticEvalの値であることはないので。
-					  || (ss - 2)->staticEval == VALUE_NONE;
+		//			  || (ss - 2)->staticEval == VALUE_NONE;
 
 		// singular延長をするnodeであるか。
 		bool singularExtensionNode = !RootNode
