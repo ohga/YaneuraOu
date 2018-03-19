@@ -156,13 +156,11 @@ namespace YaneuraOu2017GOKU
 
 	// Razoringのdepthに応じたマージン値
 	// RazorMargin[0]は、search()のなかでは depth >= ONE_PLY であるから使われない。
-	const int RazorMargin1 = 590;
-	const int RazorMargin2 = 614;
-	const int RazorMargin2r = 594;
+	const int RazorMargin[] = {0, 590, 604};
 
 	// depth(残り探索深さ)に応じたfutility margin。
 	Value futility_margin(Depth d, bool improving) {
-    	return Value((175 - 50 * improving) * d / ONE_PLY);
+    	return Value((161 - 53 * improving) * d / ONE_PLY);
 	}
 
 	// 残り探索depthが少なくて、王手がかかっていなくて、王手にもならないような指し手を
@@ -1130,19 +1128,11 @@ namespace YaneuraOu2017GOKU
 
 		// 残り探索深さが少ないときに、その手数でalphaを上回りそうにないとき用の枝刈り。
 		if (   !PvNode
-			&&  depth <= 2 * ONE_PLY)
+			&&  depth <= 2 * ONE_PLY
+			&& eval <= alpha - Value(RazorMargin[depth / ONE_PLY]))
 		{
-			if (   depth == ONE_PLY
-				&& eval + RazorMargin1 <= alpha)
-				return qsearch<NonPV, false>(pos, ss, alpha, alpha+1);
-			else if (eval + RazorMargin2 <= alpha)
-			{
-				Value ralpha = alpha - RazorMargin2;
-				Value v = qsearch<NonPV, false>(pos, ss, ralpha, ralpha+1);
-
-				if (v <= ralpha)
-					return v;
-			}
+			Value ralpha = alpha - Value((depth != ONE_PLY) * RazorMargin[depth / ONE_PLY]);
+			Value v = qsearch<NonPV, false>(pos, ss, ralpha, ralpha+1);
 		}
 
 		// -----------------------
@@ -1236,7 +1226,8 @@ namespace YaneuraOu2017GOKU
 			&&  depth >= PARAM_PROBCUT_DEPTH * ONE_PLY
 			&&  abs(beta) < VALUE_MATE_IN_MAX_PLY)
 		{
-			Value rbeta = std::min(beta + 216 - 48 * improving, VALUE_INFINITE);
+			//Value rbeta = std::min(beta + 216 - 48 * improving, VALUE_INFINITE);
+			Value rbeta = std::min(beta + PARAM_PROBCUT_MARGIN1 - PARAM_PROBCUT_MARGIN2 * improving, VALUE_INFINITE);
 
 			// 大胆に探索depthを減らす
 			Depth rdepth = depth - (PARAM_PROBCUT_DEPTH - 1) * ONE_PLY;
