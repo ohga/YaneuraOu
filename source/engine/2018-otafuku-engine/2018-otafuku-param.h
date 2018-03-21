@@ -16,30 +16,36 @@
 // depth手先で評価値が変動する幅が = depth * PARAM_FUTILITY_MARGIN_DEPTH
 // 元の値 = 150
 // [PARAM] min:100,max:240,step:2,interval:1,time_rate:1,fixed
-PARAM_DEFINE PARAM_FUTILITY_MARGIN_ALPHA = 147;
+//PARAM_DEFINE PARAM_FUTILITY_MARGIN_ALPHA = 147;
+PARAM_DEFINE PARAM_FUTILITY_MARGIN_ALPHA = 150; // change
 
 // 
 // 元の値 = 200
 // [PARAM] min:100,max:240,step:2,interval:1,time_rate:1,fixed
-PARAM_DEFINE PARAM_FUTILITY_MARGIN_BETA = 195;
+//PARAM_DEFINE PARAM_FUTILITY_MARGIN_BETA = 195;
+PARAM_DEFINE PARAM_FUTILITY_MARGIN_BETA = 200; // change
+//PARAM_DEFINE PARAM_FUTILITY_MARGIN_BETA = 192; // change
 
 
 // 静止探索でのfutility pruning
 // 元の値 = 128
 // [PARAM] min:50,max:160,step:5,interval:1,time_rate:1,fixed
-PARAM_DEFINE PARAM_FUTILITY_MARGIN_QUIET = 145;
+//PARAM_DEFINE PARAM_FUTILITY_MARGIN_QUIET = 145;
+PARAM_DEFINE PARAM_FUTILITY_MARGIN_QUIET = 128; // change
 
 // futility pruningの適用depth。
 // この制限自体が要らない可能性がある。→　そうでもなかった。
 // 元の値 = 7
 // [PARAM] min:5,max:15,step:1,interval:1,time_rate:1,fixed
-PARAM_DEFINE PARAM_FUTILITY_RETURN_DEPTH = 9;
+//PARAM_DEFINE PARAM_FUTILITY_RETURN_DEPTH = 9;
+PARAM_DEFINE PARAM_FUTILITY_RETURN_DEPTH = 7; //change
 
 // 親nodeでのfutilityの適用depth。
 // この枝刈り、depthの制限自体が要らないような気がする。→　そうでもなかった。
 // 元の値 = 7
 // [PARAM] min:5,max:20,step:1,interval:1,time_rate:1,fixed
-PARAM_DEFINE PARAM_FUTILITY_AT_PARENT_NODE_DEPTH = 12;
+//PARAM_DEFINE PARAM_FUTILITY_AT_PARENT_NODE_DEPTH = 12;
+PARAM_DEFINE PARAM_FUTILITY_AT_PARENT_NODE_DEPTH = 7; // change
 
 // 親nodeでのfutility margin
 // 元の値 = 256
@@ -49,17 +55,20 @@ PARAM_DEFINE PARAM_FUTILITY_AT_PARENT_NODE_MARGIN1 = 256;
 // staticEvalから減算するmargin
 // 元の値 = 200
 // [PARAM] min:0,max:300,step:25,interval:1,time_rate:1,fixed
-PARAM_DEFINE PARAM_FUTILITY_AT_PARENT_NODE_MARGIN2 = 248;
+//PARAM_DEFINE PARAM_FUTILITY_AT_PARENT_NODE_MARGIN2 = 248;
+PARAM_DEFINE PARAM_FUTILITY_AT_PARENT_NODE_MARGIN2 = 200; // change
 
 // depthが2乗されるので影響大きい
 // 元の値 = 35
 // [PARAM] min:20,max:50,step:1,interval:1,time_rate:1,fixed
-PARAM_DEFINE PARAM_FUTILITY_AT_PARENT_NODE_GAMMA1 = 40;
+//PARAM_DEFINE PARAM_FUTILITY_AT_PARENT_NODE_GAMMA1 = 40;
+PARAM_DEFINE PARAM_FUTILITY_AT_PARENT_NODE_GAMMA1 = 35; // change
 
 // depthが2乗されるので影響大きい
 // 元の値 = 35
 // [PARAM] min:20,max:60,step:3,interval:1,time_rate:1,fixed
-PARAM_DEFINE PARAM_FUTILITY_AT_PARENT_NODE_GAMMA2 = 51;
+//PARAM_DEFINE PARAM_FUTILITY_AT_PARENT_NODE_GAMMA2 = 51;
+PARAM_DEFINE PARAM_FUTILITY_AT_PARENT_NODE_GAMMA2 = 35; // change
 
 //
 // null move dynamic pruning
@@ -70,7 +79,8 @@ PARAM_DEFINE PARAM_FUTILITY_AT_PARENT_NODE_GAMMA2 = 51;
 
 // 元の値 = 823
 // [PARAM] min:500,max:1500,step:5,interval:1,time_rate:1,fixed
-PARAM_DEFINE PARAM_NULL_MOVE_DYNAMIC_ALPHA = 818;
+//PARAM_DEFINE PARAM_NULL_MOVE_DYNAMIC_ALPHA = 818;
+PARAM_DEFINE PARAM_NULL_MOVE_DYNAMIC_ALPHA = 823; //change
 
 // 元の値 = 67
 // [PARAM] min:50,max:100,step:8,interval:1,time_rate:1,fixed
@@ -78,12 +88,14 @@ PARAM_DEFINE PARAM_NULL_MOVE_DYNAMIC_BETA = 67;
 
 // 元の値 = 35
 // [PARAM] min:10,max:60,step:1,interval:1,time_rate:1,fixed
-PARAM_DEFINE PARAM_NULL_MOVE_MARGIN = 31;
+//PARAM_DEFINE PARAM_NULL_MOVE_MARGIN = 31;
+PARAM_DEFINE PARAM_NULL_MOVE_MARGIN = 35; // change
 
 // null moveでbeta値を上回ったときに、これ以下ならreturnするdepth。適用depth。
 // 元の値 = 12
 // [PARAM] min:4,max:16,step:1,interval:1,time_rate:1,fixed
-PARAM_DEFINE PARAM_NULL_MOVE_RETURN_DEPTH = 14;
+//PARAM_DEFINE PARAM_NULL_MOVE_RETURN_DEPTH = 14;
+PARAM_DEFINE PARAM_NULL_MOVE_RETURN_DEPTH = 12; // change
 
 
 //
@@ -98,7 +110,9 @@ PARAM_DEFINE PARAM_PROBCUT_DEPTH = 5;
 // probcutのmargin
 // 元の値 = 200
 // [PARAM] min:100,max:300,step:3,interval:1,time_rate:1,fixed
-PARAM_DEFINE PARAM_PROBCUT_MARGIN = 194;
+// PARAM_DEFINE PARAM_PROBCUT_MARGIN = 194;
+PARAM_DEFINE PARAM_PROBCUT_MARGIN1 = 216; // new 216
+PARAM_DEFINE PARAM_PROBCUT_MARGIN2 = 44; // new 48
 
 
 //
@@ -110,19 +124,22 @@ PARAM_DEFINE PARAM_PROBCUT_MARGIN = 194;
 // 10秒設定だと6か8あたりに局所解があるようだ。
 // 元の値 = 8
 // [PARAM] min:4,max:13,step:1,interval:1,time_rate:1,fixed
-PARAM_DEFINE PARAM_SINGULAR_EXTENSION_DEPTH = 7;
+//PARAM_DEFINE PARAM_SINGULAR_EXTENSION_DEPTH = 7;
+PARAM_DEFINE PARAM_SINGULAR_EXTENSION_DEPTH = 8; // change
 
 // singular extensionのmarginを計算するときの係数
 // rBeta = std::max(ttValue - PARAM_SINGULAR_MARGIN * depth / (8 * ONE_PLY), -VALUE_MATE);
 // 元の値 = 256
 // [PARAM] min:128,max:400,step:4,interval:1,time_rate:1,fixed
-PARAM_DEFINE PARAM_SINGULAR_MARGIN = 194;
+//PARAM_DEFINE PARAM_SINGULAR_MARGIN = 194;
+PARAM_DEFINE PARAM_SINGULAR_MARGIN = 256; // change
 
 // singular extensionで浅い探索をするときの深さに関する係数
 // このパラメーター、長い時間でないと調整できないし下手に調整すべきではない。
 // 元の値 = 16
 // [PARAM] min:8,max:32,step:2,interval:1,time_rate:1,fixed
-PARAM_DEFINE PARAM_SINGULAR_SEARCH_DEPTH_ALPHA = 20;
+//PARAM_DEFINE PARAM_SINGULAR_SEARCH_DEPTH_ALPHA = 20;
+PARAM_DEFINE PARAM_SINGULAR_SEARCH_DEPTH_ALPHA = 16;
 
 
 //
@@ -138,7 +155,8 @@ PARAM_DEFINE PARAM_PRUNING_BY_MOVE_COUNT_DEPTH = 16;
 // これ、将棋ではそこそこ上げたほうが長い時間では良さげ。
 // 元の値 = 3
 // [PARAM] min:2,max:32,step:1,interval:1,time_rate:1,fixed
-PARAM_DEFINE PARAM_PRUNING_BY_HISTORY_DEPTH = 9;
+//PARAM_DEFINE PARAM_PRUNING_BY_HISTORY_DEPTH = 9;
+PARAM_DEFINE PARAM_PRUNING_BY_HISTORY_DEPTH = 3;
 
 
 // historyの値によってreductionするときの係数
@@ -155,7 +173,8 @@ PARAM_DEFINE PARAM_REDUCTION_BY_HISTORY = 4000;
 // 置換表に指し手が登録されていないときに浅い探索をするときの深さに関する係数
 // 元の値 = 256
 // [PARAM] min:128,max:384,step:5,interval:1,time_rate:1,fixed
-PARAM_DEFINE PARAM_IID_MARGIN_ALPHA = 251;
+//PARAM_DEFINE PARAM_IID_MARGIN_ALPHA = 251;
+PARAM_DEFINE PARAM_IID_MARGIN_ALPHA = 256; // 232;  // change
 
 
 //
@@ -187,7 +206,8 @@ PARAM_DEFINE PARAM_RAZORING_MARGIN4 = 554;
 
 // 元の値 = 131
 // [PARAM] min:64,max:256,step:2,interval:1,time_rate:1,fixed
-PARAM_DEFINE PARAM_REDUCTION_ALPHA = 135;
+//PARAM_DEFINE PARAM_REDUCTION_ALPHA = 135;
+PARAM_DEFINE PARAM_REDUCTION_ALPHA = 131; // change
 
 
 //
@@ -202,7 +222,8 @@ PARAM_DEFINE PARAM_FUTILITY_MOVE_COUNT_ALPHA0 = 240;
 
 // 元の値 = 500
 // [PARAM] min:300,max:600,step:4,interval:1,time_rate:1,fixed
-PARAM_DEFINE PARAM_FUTILITY_MOVE_COUNT_ALPHA1 = 492;
+//PARAM_DEFINE PARAM_FUTILITY_MOVE_COUNT_ALPHA1 = 492;
+PARAM_DEFINE PARAM_FUTILITY_MOVE_COUNT_ALPHA1 = 500; // change
 
 // 元の値 = 740
 // [PARAM] min:500,max:2000,step:10,interval:1,time_rate:1,fixed
@@ -248,7 +269,8 @@ PARAM_DEFINE PARAM_WEAK_MATE_PLY = 1;
 // aspiration searchの増加量
 // 元の値 = 15
 // [PARAM] min:12,max:40,step:1,interval:2,time_rate:1,fixed
-PARAM_DEFINE PARAM_ASPIRATION_SEARCH_DELTA = 16;
+//PARAM_DEFINE PARAM_ASPIRATION_SEARCH_DELTA = 16;
+PARAM_DEFINE PARAM_ASPIRATION_SEARCH_DELTA = 15; // change
 
 
 // 評価関数での手番の価値

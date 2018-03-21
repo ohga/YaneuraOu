@@ -607,6 +607,7 @@ namespace YaneuraOu2017GOKU
 								&& !pos.capture(move);
 
 			if ((!InCheck || evasionPrunable)
+#if 0
 				// 【計測資料 5.】!is_promote()と!pawn_promotion()との比較。
 #if 0
 				// Stockfish8相当のコード
@@ -614,6 +615,7 @@ namespace YaneuraOu2017GOKU
 #else
 				// 成る手ではなく、歩が成る手のみを除外
 				&& !pos.pawn_promotion(move)
+#endif
 #endif
 				&& !pos.see_ge(move))
 				continue;
@@ -911,7 +913,7 @@ namespace YaneuraOu2017GOKU
 				if (ttValue >= beta)
 				{
 					// 【計測資料 8.】 capture()とcaputure_or_pawn_promotion()の比較
-#if 1
+#if 0
 					// Stockfish相当のコード
 					if (!pos.capture(ttMove))
 #else
@@ -935,7 +937,7 @@ namespace YaneuraOu2017GOKU
 				}
 				// fails lowのときのquiet ttMoveに対するペナルティ
 				// 【計測資料 9.】capture_or_promotion(),capture_or_pawn_promotion(),capture()での比較
-#if 1
+#if 0
 				// Stockfish相当のコード
 				else if (!pos.capture_or_promotion(ttMove))
 #else
@@ -1095,7 +1097,7 @@ namespace YaneuraOu2017GOKU
 
 			// 【計測資料 22.】1手前の指し手がnull move時のevaluate()の呼び出し
 
-#if 0
+#if 1
 			if ((ss - 1)->currentMove == MOVE_NULL)
 				eval = ss->staticEval = -(ss - 1)->staticEval + 2 * PARAM_EVAL_TEMPO;
 #endif
@@ -1574,7 +1576,7 @@ namespace YaneuraOu2017GOKU
 
 					// 【計測資料 20.】SEEが負の指し手を枝刈りする/しない
 
-					if (!pos.see_ge(move , Value(-PARAM_FUTILITY_AT_PARENT_NODE_GAMMA1 * lmrDepth * lmrDepth)))
+					if (lmrDepth < 8 && !pos.see_ge(move , Value(-PARAM_FUTILITY_AT_PARENT_NODE_GAMMA1 * lmrDepth * lmrDepth)))
 						continue;
 
 				}
@@ -1589,13 +1591,13 @@ namespace YaneuraOu2017GOKU
 					&& !extension
 					&& !pos.see_ge(move, Value(-PawnValue * (depth / ONE_PLY))))
 					continue;
-#endif
-
+#else
 				// やねうら王の独自のコード。depthの2乗に比例したseeマージン。適用depthに制限なし。
-				else if (!extension
+				else if (depth < 7 * ONE_PLY && !extension
 					&& !pos.see_ge(move, Value(-PARAM_FUTILITY_AT_PARENT_NODE_GAMMA2 * (depth / ONE_PLY) * (depth / ONE_PLY))
 						// PARAM_FUTILITY_AT_PARENT_NODE_GAMMA2を少し大きめにして調整したほうがよさげ。
 					))
+#endif
 					continue;
 
 			}
