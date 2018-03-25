@@ -249,23 +249,28 @@ int main(int argc, char* argv[])
     Eval::init();
 
 #if defined(GODWHALE_CLUSTER_SLAVE)
-    if (argc > 3) {
-        auto loginName = argv[3];
-        validate_login_name(loginName);
-        Options["Login_Name"] << USI::Option(loginName);
-        if (argc > 4) {
-            Options["Threads"] = argv[4];
-        }
+	if (argc > 3) {
+		int nn = std::atoi(argv[2]);
+		if (nn > 1024 && nn < 65536) {
+			auto loginName = argv[3];
+			validate_login_name(loginName);
+			Options["Login_Name"] << USI::Option(loginName);
+			if (argc > 4) {
+				Options["Threads"] = argv[4];
+			}
 
-        IsGodwhaleMode = true;
-        start_godwhale_io(argv[1], argv[2]);
-        USI::loop(1, argv);
-        close_godwhale_io();
-    }
-    else {
-	    // USIコマンドの応答部
-	    USI::loop(argc, argv);
-    }
+			IsGodwhaleMode = true;
+			start_godwhale_io(argv[1], argv[2]);
+			USI::loop(1, argv);
+			close_godwhale_io();
+		} else {
+			USI::loop(argc, argv);
+		}
+	}
+	else {
+		// USIコマンドの応答部
+		USI::loop(argc, argv);
+	}
 #else
     // USIコマンドの応答部
     USI::loop(argc, argv);
