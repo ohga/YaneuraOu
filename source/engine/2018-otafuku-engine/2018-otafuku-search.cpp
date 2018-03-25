@@ -620,6 +620,13 @@ namespace YaneuraOu2017GOKU
 				&& !pos.see_ge(move))
 				continue;
 
+#ifdef USE_KEY_AFTER
+			{
+				const Key nextKey = pos.key_after(move);
+				prefetch(TT.first_entry(nextKey));
+	//			Eval::prefetch_evalhash(nextKey);
+			}
+#endif
 			// -----------------------
 			//     局面を1手進める
 			// -----------------------
@@ -1576,7 +1583,7 @@ namespace YaneuraOu2017GOKU
 
 					// 【計測資料 20.】SEEが負の指し手を枝刈りする/しない
 
-					if (lmrDepth < 8 && !pos.see_ge(move , Value(-PARAM_FUTILITY_AT_PARENT_NODE_GAMMA1 * lmrDepth * lmrDepth)))
+					if (lmrDepth < PARAM_FUTILITY_AT_PARENT_NODE_DEPTH2 && !pos.see_ge(move , Value(-PARAM_FUTILITY_AT_PARENT_NODE_GAMMA1 * lmrDepth * lmrDepth)))
 						continue;
 
 				}
@@ -1584,7 +1591,6 @@ namespace YaneuraOu2017GOKU
 				// 浅い深さでの、危険な指し手を枝刈りする。
 
 				// 【計測資料 19.】 浅い深さでの枝刈りについて
-
 #if 0
 				// 2017/04/17現在のStockfish相当。これだとR30ぐらい弱くなる。
 				else if (depth < 7 * ONE_PLY
@@ -1593,7 +1599,7 @@ namespace YaneuraOu2017GOKU
 					continue;
 #else
 				// やねうら王の独自のコード。depthの2乗に比例したseeマージン。適用depthに制限なし。
-				else if (depth < 7 * ONE_PLY && !extension
+				else if (depth < PARAM_FUTILITY_AT_PARENT_NODE_DEPTH3 * ONE_PLY && !extension
 					&& !pos.see_ge(move, Value(-PARAM_FUTILITY_AT_PARENT_NODE_GAMMA2 * (depth / ONE_PLY) * (depth / ONE_PLY))
 						// PARAM_FUTILITY_AT_PARENT_NODE_GAMMA2を少し大きめにして調整したほうがよさげ。
 					))
@@ -1610,9 +1616,13 @@ namespace YaneuraOu2017GOKU
 			// 計算するコストがわりとあるので、これをやってもあまり得にはならない。無効にしておく。
 
 			// 投機的なprefetch
-			//const Key nextKey = pos.key_after(move);
-			//prefetch(TT.first_entry(nextKey));
-			//Eval::prefetch_evalhash(nextKey);
+#ifdef USE_KEY_AFTER
+			{
+				const Key nextKey = pos.key_after(move);
+				prefetch(TT.first_entry(nextKey));
+	//			Eval::prefetch_evalhash(nextKey);
+			}
+#endif
 
 			// legal()のチェック。root nodeだとlegal()だとわかっているのでこのチェックは不要。
 			// 非合法手はほとんど含まれていないからこの判定はdo_move()の直前まで遅延させたほうが得。
@@ -1662,7 +1672,7 @@ namespace YaneuraOu2017GOKU
 					// 相手の指し手をたくさん読んでいるのにこちらだけreductionするとバランスが悪いから。
 
 					// 【計測資料 4.】相手のmoveCountが高いときにreductionを減らす
-#if 0
+#if 1
 					if ((ss - 1)->moveCount > 15)
 						r -= ONE_PLY;
 #endif
@@ -1671,7 +1681,7 @@ namespace YaneuraOu2017GOKU
 
 					// 【計測資料 21.】pvExact時のreduction軽減
 
-#if 0
+#if 1
 					if (pvExact)
 						r -= ONE_PLY;
 #endif
