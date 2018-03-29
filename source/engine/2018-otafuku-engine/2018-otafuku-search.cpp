@@ -2244,7 +2244,7 @@ void Search::clear()
 
 				// nonPVでimproving(評価値が2手前から上がっている)でないときはreductionの量を増やす。
 				// →　これ、ほとんど効果がないようだ…。あとで調整すべき。
-				if (!imp && Reductions[NonPV][imp][d][mc] >= 2 * ONE_PLY)
+				if (!imp && r > 1.0)
 					Reductions[NonPV][imp][d][mc] ++;
 			}
 
