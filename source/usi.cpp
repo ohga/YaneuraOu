@@ -495,9 +495,9 @@ void is_ready(bool skipCorruptCheck)
 		Eval::print_softname(eval_sum);
 
 #if defined(GODWHALE_CLUSTER_SLAVE)
-        /*if (eval_sum != EvalCheckSum)
+        if (eval_sum != EvalCheckSum)
             sync_cout << "info string fatal error: the checksum of the evaluation file isn't valid. "
-                         "please download the new one." << sync_endl;*/
+                         "please download new one." << sync_endl;
 #endif
 
 		load_eval_finished = true;
