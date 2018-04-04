@@ -37,7 +37,7 @@ template <typename Protocol,
     typename TimeTraits = steady_timer::traits_type,
     typename TimerService = steady_timer::service_type>
 #endif
-class basic_socket_streambuf
+class asio_socket_streambuf
   : public std::streambuf,
     private detail::socket_streambuf_base,
     public basic_socket<Protocol, StreamSocketService>
@@ -67,7 +67,7 @@ public:
 #endif
 
   /// Construct a basic_socket_streambuf without establishing a connection.
-  basic_socket_streambuf()
+  asio_socket_streambuf()
     : basic_socket<Protocol, StreamSocketService>(
         this->detail::socket_streambuf_base::io_service_),
       unbuffered_(false),
@@ -78,7 +78,7 @@ public:
   }
 
   /// Destructor flushes buffered data.
-  virtual ~basic_socket_streambuf()
+  virtual ~asio_socket_streambuf()
   {
     if (pptr() != pbase())
       overflow(traits_type::eof());
@@ -93,7 +93,7 @@ public:
    * @return \c this if a connection was successfully established, a null
    * pointer otherwise.
    */
-  basic_socket_streambuf<Protocol, StreamSocketService,
+  asio_socket_streambuf<Protocol, StreamSocketService,
     Time, TimeTraits, TimerService>* connect(
       const endpoint_type& endpoint)
   {
@@ -128,7 +128,7 @@ public:
    * @return \c this if a connection was successfully established, a null
    * pointer otherwise.
    */
-  basic_socket_streambuf<Protocol, StreamSocketService,
+  asio_socket_streambuf<Protocol, StreamSocketService,
     Time, TimeTraits, TimerService>* connect(const std::string &host, const std::string &service)
   {
     init_buffers();
@@ -166,7 +166,7 @@ public:
    * @return \c this if a connection was successfully established, a null
    * pointer otherwise.
    */
-  basic_socket_streambuf<Protocol, StreamSocketService,
+  asio_socket_streambuf<Protocol, StreamSocketService,
     Time, TimeTraits, TimerService>* close()
   {
     sync();

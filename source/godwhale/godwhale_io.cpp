@@ -9,8 +9,10 @@
 // boost1.66からインターフェースが新しくなり、バグも修正された。
 #if BOOST_VERSION >= 106600
 #include <boost/asio/basic_socket_streambuf.hpp>
+typedef boost::asio::basic_socket_streambuf<boost::asio::ip::tcp> socket_streambuf;
 #else
 #include "asio_socket_streambuf.hpp"
+typedef boost::asio::asio_socket_streambuf<boost::asio::ip::tcp> socket_streambuf;
 #endif
 
 namespace boost
@@ -26,6 +28,7 @@ struct Tee : public std::streambuf
     Tee(std::streambuf* buf_, std::streambuf* log_, bool log_is_out_)
         : buf(buf_), log(log_), prefix(log_is_out_ ? "<< " : ">> ") {}
 
+protected:
     int sync() { return buf->pubsync(); }
     int_type uflow() { return buf->sbumpc(); }
 
@@ -149,7 +152,7 @@ struct GodwhaleIO
     }
 
 private:
-    boost::asio::basic_socket_streambuf<boost::asio::ip::tcp> socketbuf;
+    socket_streambuf socketbuf;
     std::streambuf *cinbuf, *coutbuf;
     Tee in, out; // 標準入力とファイル、標準出力とファイルのひも付け
 };
