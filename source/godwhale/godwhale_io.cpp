@@ -4,9 +4,14 @@
 #include <thread>
 #include "godwhale_io.hpp"
 
-//#include <boost/asio/basic_socket_streambuf.hpp>
 #include <boost/asio/ip/tcp.hpp>
+
+// boost1.66からインターフェースが新しくなり、バグも修正された。
+#if BOOST_VERSION >= 106600
+#include <boost/asio/basic_socket_streambuf.hpp>
+#else
 #include "asio_socket_streambuf.hpp"
+#endif
 
 namespace boost
 {
@@ -106,17 +111,18 @@ private:
 
 struct GodwhaleIO
 {
+    // ログ出力先にはIN/OUTともにcoutを設定します。
     GodwhaleIO()
         : cinbuf(nullptr), coutbuf(nullptr)
-        , in(&sockstream, std::cout.rdbuf(), false)
-        , out(&sockstream, std::cout.rdbuf(), true) {}
+        , in(&socketbuf, std::cout.rdbuf(), false)
+        , out(&socketbuf, std::cout.rdbuf(), true) {}
     ~GodwhaleIO() { close(); }
 
     void start(const std::string &host, const std::string &port) {
         std::cout << "connect to " << host << ":" << port << std::endl;
 
         // 接続できるまでループを回す
-        while (sockstream.connect(host, port) == nullptr) {
+        while (socketbuf.connect(host, port) == nullptr) {
             std::cout << "retry..." << std::endl;
 
             std::this_thread::sleep_for(std::chrono::seconds(10));
@@ -128,7 +134,7 @@ struct GodwhaleIO
     }
 
     void close() {
-        if (sockstream.is_open()) {
+        if (socketbuf.is_open()) {
             if (coutbuf != nullptr) {
                 std::cout.rdbuf(coutbuf);
                 coutbuf = nullptr;
@@ -137,13 +143,13 @@ struct GodwhaleIO
                 std::cin.rdbuf(cinbuf);
                 cinbuf = nullptr;
             }
-            sockstream.close();
+            socketbuf.close();
             std::cout << "connection closed" << std::endl;
         }
     }
 
 private:
-    boost::asio::asio_socket_streambuf<boost::asio::ip::tcp> sockstream;
+    boost::asio::basic_socket_streambuf<boost::asio::ip::tcp> socketbuf;
     std::streambuf *cinbuf, *coutbuf;
     Tee in, out; // 標準入力とファイル、標準出力とファイルのひも付け
 };
