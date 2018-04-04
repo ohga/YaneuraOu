@@ -5,7 +5,15 @@
 #include "godwhale_io.hpp"
 
 #include <boost/asio/ip/tcp.hpp>
+
+// boost1.66からインターフェースが新しくなり、バグも修正された。
+#if BOOST_VERSION >= 106600
+#include <boost/asio/basic_socket_streambuf.hpp>
+typedef boost::asio::basic_socket_streambuf<boost::asio::ip::tcp> socket_streambuf;
+#else
 #include "asio_socket_streambuf.hpp"
+typedef boost::asio::asio_socket_streambuf<boost::asio::ip::tcp> socket_streambuf;
+#endif
 
 namespace boost
 {
@@ -13,71 +21,111 @@ namespace boost
 }
 
 // logging用のhack。streambufをこれでhookしてしまえば追加コードなしで普通に
-// cinからの入力とcoutへの出力をファイルにリダイレクトできる。
+// streambufの入出力を他のstreambufにリダイレクトできる。
 // cf. http://groups.google.com/group/comp.lang.c++/msg/1d941c0f26ea0d81
 struct Tee : public std::streambuf
 {
-    Tee(std::streambuf* buf_, std::streambuf* remote_) 
-        : buf(buf_), remote(remote_), last('\n') {}
+    Tee(std::streambuf* buf_, std::streambuf* log_, bool log_is_out_)
+        : buf(buf_), log(log_), prefix(log_is_out_ ? "<< " : ">> ") {}
 
-    int sync() { return buf->pubsync(), remote->pubsync(); }
-    int_type uflow() { return remote->sbumpc(); }
-    int_type underflow() { return write(remote->sgetc(), ">> "); }
-    int_type overflow(int_type c) { return write(remote->sputc(traits_type::to_char_type(c)), "<< "); }
+protected:
+    int sync() { return buf->pubsync(); }
+    int_type uflow() { return buf->sbumpc(); }
 
+    /// streambufからの1文字入力を処理し、ログにも残す。
+    int_type underflow() {
+        return write_log1(buf->sgetc());
+    }
+
+    /// streambufへの1文字出力を処理し、ログにも残す。
+    int_type overflow(int_type c) {
+        return write_log1(buf->sputc(traits_type::to_char_type(c)));
+    }
+
+    /// streambufからの複数文字入力を処理し、ログにも残す。
     std::streamsize xsgetn(char *ptr, std::streamsize count) {
-        std::streamsize ret = remote->sgetn(ptr, count);
-        writen(ptr, count, ">> ");
+        std::streamsize ret = buf->sgetn(ptr, count);
+        write_logn(ptr, count);
         return ret;
     }
 
+    /// streambufへの複数文字出力を処理し、ログにも残す。
     std::streamsize xsputn(const char *ptr, std::streamsize count) {
-        writen(ptr, count, "<< ");
-        return remote->sputn(ptr, count);
+        write_logn(ptr, count);
+        return buf->sputn(ptr, count);
     }
     
-    int_type write(int_type c, const char *prefix) {
+private:
+    void flush_log() {
+        auto line = logbuffer.str();
+        logbuffer.str(""); // バッファのクリア
+
+        // 改行を出力するときは空行でも出力する。
+        log->sputn(prefix, 3);
+        log->sputn(line.c_str(), line.size());
+        log->sputc('\n');
+        log->pubsync(); // 最後にflushしておく
+    }
+
+    /// 1文字用のログ出力
+    /// 各行の先頭にprefixを出力し、エンジンにとっての入力か出力かをログ上で分かるようにする。
+    int_type write_log1(int_type c) {
+        // EOFなら何もしない。
         if (c == traits_type::eof()) {
             return c;
         }
-        if (last == '\n') buf->sputn(prefix, 3);
-        buf->sputc(traits_type::to_char_type(c));
-        return (last = c);
+
+        // 改行文字が来たら1行分のデータをまとめて出力する。
+        if (c == '\n') {
+            flush_log();
+        }
+        else {
+            logbuffer << traits_type::to_char_type(c);
+        }
+
+        return c;
     }
 
-    void writen(const char *ptr, std::streamsize count, const char *prefix) {
+    /// 複数文字のログ出力
+    void write_logn(const char *ptr, std::streamsize count) {
         std::streamsize curr, prev=0;
 
-        if (last == '\n') buf->sputn(prefix, 3);
-        for (curr = 0; curr < count - 1; ++curr) {
+        for (curr = 0; curr < count; ++curr) {
             if (ptr[curr] == '\n') {
-                buf->sputn(&ptr[prev], curr - prev + 1);
-                buf->sputn(prefix, 3);
+                // 1度バッファに書き出してから1行分のログを出力
+                // 直接ログに書き出すより遅くなるが、ソースが簡単になるのでこのようにする。
+                logbuffer.write(&ptr[prev], curr - prev);
+                flush_log();
                 prev = curr + 1;
             }
         }
 
-        if (prev < count) buf->sputn(&ptr[prev], count - prev);
-        last = ptr[count - 1];
+        // 改行を含まない領域をまとめてバッファに出力
+        if (prev < count) logbuffer.write(&ptr[prev], count - prev);
     }
 
-    std::streambuf *buf, *remote; // 標準入出力 , リモート
-    int_type last;
+private:
+    std::streambuf *buf; ///< コマンドの入出先
+    std::streambuf *log; ///< ログの出力先
+    std::stringstream logbuffer; ///< ログ出力用のバッファ。1行分保存する
+    const char *prefix; ///< 出力時は'<< '、入力時は'>> 'をログの行頭に出力する
 };
+
 
 struct GodwhaleIO
 {
+    // ログ出力先にはIN/OUTともにcoutを設定します。
     GodwhaleIO()
         : cinbuf(nullptr), coutbuf(nullptr)
-        , in(std::cin.rdbuf(), &sockstream)
-        , out(std::cout.rdbuf(), &sockstream) {}
+        , in(&socketbuf, std::cout.rdbuf(), false)
+        , out(&socketbuf, std::cout.rdbuf(), true) {}
     ~GodwhaleIO() { close(); }
 
     void start(const std::string &host, const std::string &port) {
         std::cout << "connect to " << host << ":" << port << std::endl;
 
         // 接続できるまでループを回す
-        while (sockstream.connect(host, port) == nullptr) {
+        while (socketbuf.connect(host, port) == nullptr) {
             std::cout << "retry..." << std::endl;
 
             std::this_thread::sleep_for(std::chrono::seconds(10));
@@ -89,7 +137,7 @@ struct GodwhaleIO
     }
 
     void close() {
-        if (sockstream.is_open()) {
+        if (socketbuf.is_open()) {
             if (coutbuf != nullptr) {
                 std::cout.rdbuf(coutbuf);
                 coutbuf = nullptr;
@@ -98,13 +146,13 @@ struct GodwhaleIO
                 std::cin.rdbuf(cinbuf);
                 cinbuf = nullptr;
             }
-            sockstream.close();
+            socketbuf.close();
             std::cout << "connection closed" << std::endl;
         }
     }
 
 private:
-    boost::asio::asio_socket_streambuf<boost::asio::ip::tcp> sockstream;
+    socket_streambuf socketbuf;
     std::streambuf *cinbuf, *coutbuf;
     Tee in, out; // 標準入力とファイル、標準出力とファイルのひも付け
 };
