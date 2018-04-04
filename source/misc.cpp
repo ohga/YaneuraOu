@@ -160,6 +160,7 @@ struct Tie : public streambuf
   streambuf *buf, *log; // 標準入出力 , ログファイル
 };
 
+#if 0
 struct Logger {
 	static void start(bool b)
 	{
@@ -194,8 +195,9 @@ private:
 
 	~Logger() { start(false); }
 };
+#endif
 
-void start_logger(bool b) { Logger::start(b); }
+void start_logger(bool b) { /*Logger::start(b);*/ }
 
 // --------------------
 //  ファイルの丸読み
