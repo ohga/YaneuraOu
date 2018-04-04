@@ -5,6 +5,6 @@
 #define SlaveName "GodwhaleChild-5.0.3"
 
 constexpr int LoginNameMaxLength = 12;
-constexpr uint64_t EvalCheckSum = 0x0000cdfb3ca11fcULL;
+constexpr uint64_t EvalCheckSum = 0x00000d51b9031805ULL;
 
 #endif

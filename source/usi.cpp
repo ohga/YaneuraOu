@@ -495,9 +495,12 @@ void is_ready(bool skipCorruptCheck)
 		Eval::print_softname(eval_sum);
 
 #if defined(GODWHALE_CLUSTER_SLAVE)
-        if (eval_sum != EvalCheckSum)
+        // クジラちゃんクライアントとして使うときは
+        // 評価関数が正規のものかチェックサムで確認する
+        if (eval_sum != EvalCheckSum) {
             sync_cout << "info string fatal error: the checksum of the evaluation file isn't valid. "
                          "please download new one." << sync_endl;
+        }
 #endif
 
 		load_eval_finished = true;
