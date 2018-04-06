@@ -1318,13 +1318,13 @@ namespace YaneuraOu2017GOKU
 		//			  || (ss - 2)->staticEval == VALUE_NONE;
 
 		// singular延長をするnodeであるか。
-		bool singularExtensionNode = !RootNode
-			&&  depth >= PARAM_SINGULAR_EXTENSION_DEPTH * ONE_PLY
-			&&  ttMove != MOVE_NONE
-			&&  ttValue != VALUE_NONE // 詰み絡みのスコアであってもsingular extensionはしたほうが良いらしい。
-			&& !excludedMove // 再帰的なsingular延長はすべきではない
-			&& (tte->bound() & BOUND_LOWER)
-			&& tte->depth() >= depth - 3 * ONE_PLY;
+//		bool singularExtensionNode = !RootNode
+//			&&  depth >= PARAM_SINGULAR_EXTENSION_DEPTH * ONE_PLY
+//			&&  ttMove != MOVE_NONE
+//			&&  ttValue != VALUE_NONE // 詰み絡みのスコアであってもsingular extensionはしたほうが良いらしい。
+//			&& !excludedMove // 再帰的なsingular延長はすべきではない
+//			&& (tte->bound() & BOUND_LOWER)
+//			&& tte->depth() >= depth - 3 * ONE_PLY;
 		// このnodeについてある程度調べたことが置換表によって証明されている。
 		// (そうでないとsingularの指し手以外に他の有望な指し手がないかどうかを調べるために
 		// null window searchするときに大きなコストを伴いかねないから。)
@@ -1477,8 +1477,13 @@ namespace YaneuraOu2017GOKU
 			// そう考えるとベストな指し手のスコアと2番目にベストな指し手のスコアとの差に応じて1手延長するのが正しいのだが、
 			// 2番目にベストな指し手のスコアを小さなコストで求めることは出来ないので…。
 
-			if (    singularExtensionNode
+			if (    depth >= 8 * ONE_PLY
 				&&  move == ttMove
+				&& !RootNode
+				&& !excludedMove // Recursive singular search is not allowed
+				&&  ttValue != VALUE_NONE
+				&& (tte->bound() & BOUND_LOWER)
+				&&  tte->depth() >= depth - 3 * ONE_PLY
 				&&  pos.legal(move))
 			{
 				// このmargin値は評価関数の性質に合わせて調整されるべき。
