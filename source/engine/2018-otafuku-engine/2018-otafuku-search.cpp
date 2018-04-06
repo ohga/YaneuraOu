@@ -1377,6 +1377,17 @@ namespace YaneuraOu2017GOKU
 		// PV nodeで、置換表にhitして、その内容がBOUND_EXACTであるなら、reduction量を減らす。(もっと先まで読めるので読んだほうが良いはず！)
 		bool pvExact = PvNode && ttHit && tte->bound() == BOUND_EXACT;
 
+#if 0
+		// Margin for pruning capturing moves: almost linear in depth
+		constexpr int CapturePruneMargin[] = { 0,
+		                                       1 * PawnValue * 1055 / 1000,
+		                                       2 * PawnValue * 1042 / 1000,
+		                                       3 * PawnValue * 963  / 1000,
+		                                       4 * PawnValue * 1038 / 1000,
+		                                       5 * PawnValue * 950  / 1000,
+		                                       6 * PawnValue * 930  / 1000
+		                                     };
+#endif
 		// -----------------------
 		// Step 12. Loop through moves
 		// -----------------------
@@ -1595,7 +1606,7 @@ namespace YaneuraOu2017GOKU
 				// 2017/04/17現在のStockfish相当。これだとR30ぐらい弱くなる。
 				else if (depth < 7 * ONE_PLY
 					&& !extension
-					&& !pos.see_ge(move, Value(-PawnValue * (depth / ONE_PLY))))
+					&& !pos.see_ge(move, -Value(CapturePruneMargin[depth / ONE_PLY])))
 					continue;
 #else
 				// やねうら王の独自のコード。depthの2乗に比例したseeマージン。適用depthに制限なし。
