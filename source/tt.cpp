@@ -22,7 +22,7 @@ void TranspositionTable::resize(size_t mbSize) {
 	free(mem);
 
 	// tableはCacheLineSizeでalignされたメモリに配置したいので、CacheLineSize-1だけ余分に確保する。
-	mem = calloc(clusterCount * sizeof(Cluster) + CacheLineSize - 1, 1);
+	mem = malloc(clusterCount * sizeof(Cluster) + CacheLineSize - 1);
 
 	if (!mem)
 	{
@@ -32,6 +32,7 @@ void TranspositionTable::resize(size_t mbSize) {
 	}
 
 	table = (Cluster*)((uintptr_t(mem) + CacheLineSize - 1) & ~(CacheLineSize - 1));
+	clear();
 }
 
 

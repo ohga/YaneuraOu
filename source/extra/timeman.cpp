@@ -9,7 +9,7 @@
 namespace {
 
   // これぐらい自分が指すと終局すると考えて計画を練る。
-  const int MoveHorizon = 80;
+  const int MoveHorizon = 140;
 
   // 思考時間のrtimeが指定されたときに用いる乱数
   PRNG prng;

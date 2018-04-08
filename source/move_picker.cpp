@@ -30,7 +30,8 @@ enum Stages: int {
 	MAIN_SEARCH,				// 置換表の指し手を返すフェーズ
 	CAPTURES_INIT,				// (CAPTURESの指し手生成)
 	GOOD_CAPTURES,				// 捕獲する指し手(CAPTURES_PRO_PLUS)を生成して指し手を一つずつ返す
-	KILLERS,					// KILLERの指し手
+	KILLER0,
+	KILLER1,
 	COUNTERMOVE,				// counter moveの指し手
 	QUIET_INIT,					// (QUIETの指し手生成)
 	QUIET,						// CAPTURES_PRO_PLUSで生成しなかった指し手を生成して、一つずつ返す。SEE値の悪い手は後回し。
@@ -360,28 +361,19 @@ Move MovePicker::next_move2() {
 		}
 		++stage;
 
-		// 1つ目のkiller move
-		// ※　killer[]は32bit化されている(上位に移動後の駒が格納されている)と仮定している。
-
-		move = killers[0];
-		if (    move != MOVE_NONE
-			&&  move != ttMove
-			&&  pos.pseudo_legal_s<false>(move)
-			&& !pos.capture_or_pawn_promotion(move))
-			return move;
 		/* fallthrough */
 
-		// killer moveを返すフェーズ
-		// (直前に置換表の指し手を返しているし、CAPTURES_PRO_PLUSでの指し手も返しているのでそれらの指し手は除外されるべき)
-	case KILLERS:
-		++stage;
-		move = killers[1]; // 2つ目のkiller move
-
-		if (    move != MOVE_NONE                     // ss->killer[0],[1]からコピーしただけなのでMOVE_NONEの可能性がある
-			&&  move != ttMove                        // 置換表の指し手を重複除去しないといけない
-			&&  pos.pseudo_legal_s<false>(move)       // pseudo_legalでない指し手以外に歩や大駒の不成なども除外
-			&& !pos.capture_or_pawn_promotion(move))  // 直前にCAPTURES_PRO_PLUSで生成している指し手を除外
-			return move;
+	case KILLER0:
+	case KILLER1:
+		do
+		{
+		    move = killers[++stage - KILLER1];
+		    if (    move != MOVE_NONE
+		        &&  move != ttMove
+		        &&  pos.pseudo_legal(move)
+		        && !pos.capture(move))
+		        return move;
+		} while (stage <= KILLER1);
 		/* fallthrough */
 
 		// counter moveを返すフェーズ
@@ -412,16 +404,16 @@ Move MovePicker::next_move2() {
 	// (置換表の指し手とkillerの指し手は返したあとなのでこれらの指し手は除外する必要がある)
 	// ※　これ、指し手の数が多い場合、AVXを使って一気に削除しておいたほうが良いのでは..
 	case QUIET:
-		while (cur < endMoves
-			&& (!skipQuiets || cur->value >= VALUE_ZERO))
-		{
-			move = *cur++;
-			if (move != ttMove
-				&& move != killers[0]
-				&& move != killers[1]
-				&& move != countermove)
-				return move;
-		}
+		if (!skipQuiets)
+			while (cur < endMoves)
+			{
+				move = *cur++;
+				if (move != ttMove
+					&& move != killers[0]
+					&& move != killers[1]
+					&& move != countermove)
+					return move;
+			}
 		++stage;
 
 		// bad capturesの先頭を指すようにする。これは指し手生成バッファの先頭付近を再利用している。

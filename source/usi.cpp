@@ -497,7 +497,7 @@ void is_ready(bool skipCorruptCheck)
 #if defined(GODWHALE_CLUSTER_SLAVE)
         // クジラちゃんクライアントとして使うときは
         // 評価関数が正規のものかチェックサムで確認する
-        if (eval_sum != EvalCheckSum) {
+        if (eval_sum != EvalCheckSum && IsGodwhaleMode) {
             sync_cout << "info string fatal error: the checksum of the evaluation file isn't valid. "
                          "please download new one." << sync_endl;
         }
