@@ -277,6 +277,14 @@ int main(int argc, char* argv[])
 		Options["EvalShare"] = true;
 #endif
 
+// USE_SHARED_MEMORY_IN_EVAL && Linux Native
+#if defined(USE_SHARED_MEMORY_IN_EVAL) && !defined(_WIN32) && !defined(USE_MSYS2)
+		// mmapのコストはそこそこあるので1スレの時だけはテストとみなして共有メモリを使用
+		if(1 == (size_t)Options["Threads"]){
+			Options["EvalShare"] << USI::Option(true);
+		}
+#endif
+
 		IsGodwhaleMode = true;
 		start_godwhale_io(argv[2], argv[3]);
 		USI::loop(1, argv);
