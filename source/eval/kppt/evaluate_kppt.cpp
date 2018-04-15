@@ -36,6 +36,14 @@
 #include <windows.h>
 #endif
 
+// USE_SHARED_MEMORY_IN_EVAL && Linux Native
+#if defined(USE_SHARED_MEMORY_IN_EVAL) && !defined(_WIN32) && !defined(USE_MSYS2)
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/mman.h>
+static volatile void *mapped_file[3];
+#endif
+
 #if defined(EVAL_LEARN)
 #include "../../learn/learning_tools.h"
 using namespace EvalLearningTools;
@@ -287,6 +295,61 @@ namespace Eval
 	// load_eval_impl()を呼び出すだけで良い。
 	void load_eval()
 	{
+// USE_SHARED_MEMORY_IN_EVAL && Linux Native
+#if defined(USE_SHARED_MEMORY_IN_EVAL) && !defined(_WIN32) && !defined(USE_MSYS2)
+		// 評価関数を共有するのか
+		if ((bool)Options["EvalShare"])
+		{
+			int fd[3];
+			long psize, size;
+			auto make_name = [&](std::string filename) { return path_combine((string)Options["EvalDir"], filename); };
+
+			psize = sysconf(_SC_PAGE_SIZE);
+
+			if((fd[0] = open(make_name(KK_BIN).c_str(), O_RDONLY, 0)) == -1){
+				sync_cout << "info string can't allocate shared eval memory(KK)." << sync_endl;
+				my_exit();
+			}
+			size = (lseek(fd[0], 0, SEEK_END) / psize + 1) * psize;
+			lseek(fd[0], 0, SEEK_SET);
+			mapped_file[0] = (void *)mmap(0, size, PROT_READ, MAP_SHARED,fd[0], 0);
+			close(fd[0]);
+			if(mapped_file[0] == MAP_FAILED){
+				sync_cout << "info string can't allocate shared eval memory(mmap KK)." << sync_endl;
+				my_exit();
+			}
+			if((fd[1] = open(make_name(KKP_BIN).c_str(), O_RDONLY, 0)) == -1){
+				sync_cout << "info string can't allocate shared eval memory(KKP)." << sync_endl;
+				my_exit();
+			}
+			size = (lseek(fd[1], 0, SEEK_END) / psize + 1) * psize;
+			lseek(fd[1], 0, SEEK_SET);
+			mapped_file[1] = (void *)mmap(0, size, PROT_READ, MAP_SHARED,fd[1], 0);
+			close(fd[1]);
+			if(mapped_file[1] == MAP_FAILED){
+				sync_cout << "info string can't allocate shared eval memory(mmap KKP)." << sync_endl;
+				my_exit();
+			}
+			if((fd[2] = open(make_name(KPP_BIN).c_str(), O_RDONLY, 0)) == -1){
+				sync_cout << "info string can't allocate shared eval memory(KPP)." << sync_endl;
+				my_exit();
+			}
+			size = (lseek(fd[2], 0, SEEK_END) / psize + 1) * psize;
+			lseek(fd[2], 0, SEEK_SET);
+			mapped_file[2] = (void *)mmap(0, size, PROT_READ, MAP_SHARED,fd[2], 0);
+			close(fd[2]);
+			if(mapped_file[2] == MAP_FAILED){
+				sync_cout << "info string can't allocate shared eval memory(mmap KPP)." << sync_endl;
+				my_exit();
+			}
+			kk_  = (ValueKk(*)[SQ_NB][SQ_NB]) mapped_file[0];
+			kkp_ = (ValueKkp(*)[SQ_NB][SQ_NB][fe_end]) mapped_file[1];
+			kpp_ = (ValueKpp(*)[SQ_NB][fe_end][fe_end]) mapped_file[2];
+
+			sync_cout << "info string use shared eval memory." << sync_endl;
+			return;
+		}
+#endif
 		eval_malloc();
 		load_eval_impl();
 	}

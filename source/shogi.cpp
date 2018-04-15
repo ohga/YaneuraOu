@@ -218,22 +218,24 @@ GlobalOptions_ GlobalOptions;
 
 bool IsGodwhaleMode = false;
 
-static void validate_login_name(const std::string name)
+static bool validate_login_name(const std::string name)
 {
     if (name.empty()) {
         std::cerr << "The Login_Name is empty !" << std::endl;
-        exit(EXIT_FAILURE);
+		return false;
     }
 
     if (name.length() > LoginNameMaxLength) {
         std::cerr << "The Login_Name is too long !" << std::endl;
-        exit(EXIT_FAILURE);
+		return false;
     }
 
     if (!std::all_of(name.begin(), name.end(), [](char _) { return (isalnum(_) || _ == '_'); })) {
         std::cerr << "The Login_Name '" << name << "' has invalid character !" << std::endl;
-        exit(EXIT_FAILURE);
+		return false;
     }
+
+	return true;
 }
 #endif
 
@@ -249,23 +251,44 @@ int main(int argc, char* argv[])
     Eval::init();
 
 #if defined(GODWHALE_CLUSTER_SLAVE)
-	if (argc > 3) {
-		int nn = std::atoi(argv[2]);
-		if (nn > 1024 && nn < 65536) {
-			auto loginName = argv[3];
-			validate_login_name(loginName);
-			Options["Login_Name"] << USI::Option(loginName);
-			if (argc > 4) {
-				Options["Threads"] = argv[4];
-			}
-
-			IsGodwhaleMode = true;
-			start_godwhale_io(argv[1], argv[2]);
-			USI::loop(1, argv);
-			close_godwhale_io();
-		} else {
-			USI::loop(argc, argv);
+	// クジラちゃんモード時のオプション
+	// godwhale host port name threads
+	if (argc > 5 && strcmp(argv[1], "godwhale") == 0) {
+		// ログイン名のチェック
+		auto loginName = argv[4];
+		if (!validate_login_name(loginName)) {
+			return EXIT_FAILURE;
 		}
+
+		// スレッド数の簡易チェック
+		char *p;
+		auto threads = std::strtol(argv[5], &p, 10);
+		if (threads <= 0) {
+			std::cerr << "thread size is invalid" << std::endl;
+			return EXIT_FAILURE;
+		}
+
+		// オプションの設定
+		Options["Login_Name"] << USI::Option(loginName);
+		Options["Threads"] = argv[5];
+
+		// msys2+clangバージョンの時は評価関数の共有メモリを使わないようにする。
+#if defined(USE_SHARED_MEMORY_IN_EVAL) && defined(_WIN32)
+		Options["EvalShare"] = true;
+#endif
+
+// USE_SHARED_MEMORY_IN_EVAL && Linux Native
+#if defined(USE_SHARED_MEMORY_IN_EVAL) && !defined(_WIN32) && !defined(USE_MSYS2)
+		// mmapのコストはそこそこあるので1スレの時だけはテストとみなして共有メモリを使用
+		if(1 == (size_t)Options["Threads"]){
+			Options["EvalShare"] << USI::Option(true);
+		}
+#endif
+
+		IsGodwhaleMode = true;
+		start_godwhale_io(argv[2], argv[3]);
+		USI::loop(1, argv);
+		close_godwhale_io();
 	}
 	else {
 		// USIコマンドの応答部

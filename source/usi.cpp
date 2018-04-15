@@ -399,6 +399,11 @@ namespace USI
 		o["EvalShare"] << Option(false);
 #endif
 
+// USE_SHARED_MEMORY_IN_EVAL && Linux Native
+#if defined(USE_SHARED_MEMORY_IN_EVAL) && !defined(_WIN32) && !defined(USE_MSYS2)
+		o["EvalShare"] << Option(false);
+#endif
+
 #if defined(LOCAL_GAME_SERVER)
 		// 子プロセスでEngineを実行するプロセッサグループ(Numa node)
 		// -1なら、指定なし。
