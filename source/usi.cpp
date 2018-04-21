@@ -145,6 +145,7 @@ namespace USI
 		size_t multiPV = std::min((size_t)Options["MultiPV"], rootMoves.size());
 
 		uint64_t nodes_searched = Threads.nodes_searched();
+		const int outarraypvlimit = (int)Options["OutArrayPVLimit"];
 
 		// MultiPVでは上位N個の候補手と読み筋を出力する必要がある。
 		for (size_t i = 0; i < multiPV; ++i)
@@ -199,10 +200,12 @@ namespace USI
 
 
 			// PV配列からPVを出力する。
-			auto out_array_pv = [&]()
+			auto out_array_pv = [&](int limit)
 			{
-				for (Move m : rootMoves[i].pv)
+				for (Move m : rootMoves[i].pv){
+					if(limit-- <= 0) break;
 					ss << " " << m;
+				}
 			};
 
 			// 置換表からPVをかき集めてきてPVを出力する。
@@ -284,14 +287,14 @@ namespace USI
 			if (Search::Limits.consideration_mode)
 				out_tt_pv();
 			else
-				out_array_pv();
+				out_array_pv(outarraypvlimit);
 
 #else
 			// 置換表からPVを出力するモード。
 			// ただし、probe()するとTTEntryのgenerationが変わるので探索に影響する。
 			// benchコマンド時、これはまずいのでbenchコマンド時にはこのモードをオフにする。
 			if (Search::Limits.bench)
-				out_array_pv();
+				out_array_pv(outarraypvlimit);
 			else
 				out_tt_pv();
 
@@ -418,6 +421,8 @@ namespace USI
 		// test evalconvertコマンドを叩く。
 		o["SkipLoadingEval"] << Option(false);
 #endif
+		// 読み筋の出力調整値
+		o["OutArrayPVLimit"] << Option(100, 0, 100);
 
 		// 各エンジンがOptionを追加したいだろうから、コールバックする。
 		USI::extra_option(o);
