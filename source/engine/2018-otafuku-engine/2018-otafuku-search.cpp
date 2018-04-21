@@ -1907,6 +1907,7 @@ namespace YaneuraOu2017GOKU
 						// beta cutである。
 
 						ASSERT_LV3(value >= beta);
+						ss->statScore = std::max(ss->statScore, 0);
 						break;
 					}
 				}
