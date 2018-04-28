@@ -274,7 +274,7 @@ int main(int argc, char* argv[])
 
 		// msys2+clangバージョンの時は評価関数の共有メモリを使わないようにする。
 #if defined(USE_SHARED_MEMORY_IN_EVAL) && defined(_WIN32)
-		Options["EvalShare"] = true;
+		Options["EvalShare"] << USI::Option(true);
 #endif
 
 // USE_SHARED_MEMORY_IN_EVAL && Linux Native
