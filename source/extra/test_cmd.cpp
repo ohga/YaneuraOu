@@ -7,6 +7,7 @@
 
 #include "all.h"
 #include "../eval/evaluate_io.h"
+#include "../evaluate.h"
 #include <unordered_set>
 
 #if defined(EVAL_LEARN)
@@ -1509,7 +1510,10 @@ struct KPPT_reader
 						(*kkp_)[k1][k2][p1][0] = (s32)(f((*kkp_)[k1][k2][p1][0], (*eval2.kkp_)[k1][k2][p1][0]));
 
 					if (merge_features == -1 || merge_features == 3 || merge_features == 7)
-					(*kkp_)[k1][k2][p1][1] = (s32)(f((*kkp_)[k1][k2][p1][1], (*eval2.kkp_)[k1][k2][p1][1]));
+						(*kkp_)[k1][k2][p1][1] = (s32)(f((*kkp_)[k1][k2][p1][1], (*eval2.kkp_)[k1][k2][p1][1]));
+
+					if (is_mix_the_piece(merge_features, p1))
+						(*kkp_)[k1][k2][p1][1] = (s32)(f((*kkp_)[k1][k2][p1][1], (*eval2.kkp_)[k1][k2][p1][1]));
 				}
 
 		for (auto k1 : SQ)
@@ -1521,7 +1525,39 @@ struct KPPT_reader
 
 					if (merge_features == -1 || merge_features == 5 || merge_features == 8)
 						(*kpp_)[k1][p1][p2][1] = (s16)(f((*kpp_)[k1][p1][p2][1], (*eval2.kpp_)[k1][p1][p2][1]));
+
+					if (is_mix_the_piece(merge_features, p1) || is_mix_the_piece(merge_features, p2))
+						(*kpp_)[k1][p1][p2][1] = (s16)(f((*kpp_)[k1][p1][p2][1], (*eval2.kpp_)[k1][p1][p2][1]));
 				}
+	}
+
+	bool is_mix_the_piece(int merge_features, int pp)
+	{
+		bool rtn = false;
+
+		switch(merge_features){
+		case 100: case 120: if(pp >= Eval::f_hand_pawn && pp < Eval::f_hand_lance) rtn = true; break;
+		case 101: case 121: if(pp >= Eval::f_hand_lance && pp < Eval::f_hand_knight) rtn = true; break;
+		case 102: case 122: if(pp >= Eval::f_hand_knight && pp < Eval::f_hand_silver) rtn = true; break;
+		case 103: case 123: if(pp >= Eval::f_hand_silver && pp < Eval::f_hand_gold) rtn = true; break;
+		case 104: case 124: if(pp >= Eval::f_hand_gold && pp < Eval::f_hand_bishop) rtn = true; break;
+		case 105: case 125: if(pp >= Eval::f_hand_bishop && pp < Eval::f_hand_rook) rtn = true; break;
+		case 106: case 126: if(pp >= Eval::f_hand_rook && pp < Eval::fe_hand_end) rtn = true; break;
+		}
+
+		if(merge_features >= 100 && merge_features < 110) return rtn;
+		if(rtn) return rtn;
+
+		switch(merge_features){
+		case 110: case 120: if(pp >= Eval::f_pawn && pp < Eval::f_lance) rtn = true; break;
+		case 111: case 121: if(pp >= Eval::f_lance && pp < Eval::f_knight) rtn = true; break;
+		case 112: case 122: if(pp >= Eval::f_knight && pp < Eval::f_silver) rtn = true; break;
+		case 113: case 123: if(pp >= Eval::f_silver && pp < Eval::f_gold) rtn = true; break;
+		case 114: case 124: if(pp >= Eval::f_gold && pp < Eval::f_bishop) rtn = true; break;
+		case 115: case 125: if(pp >= Eval::f_bishop && pp < Eval::f_rook) rtn = true; break;
+		case 116: case 126: if(pp >= Eval::f_rook && pp < Eval::fe_end) rtn = true; break;
+		}
+		return rtn;
 	}
 
 	// KPPの手番はやめてPPの手番のみに(擬似的に)変更する。
@@ -1598,6 +1634,35 @@ struct KPPT_reader
 	}
 };
 
+void print_mix_the_piece(int merge_features)
+{
+	string prefix = "   mix the piece ";
+	switch(merge_features){
+	case 100: cout << prefix << "hand_pawn" << endl; break;
+	case 101: cout << prefix << "hand_lance" << endl; break;
+	case 102: cout << prefix << "hand_knight" << endl; break;
+	case 103: cout << prefix << "hand_silver" << endl; break;
+	case 104: cout << prefix << "hand_gold" << endl; break;
+	case 105: cout << prefix << "hand_bishop" << endl; break;
+	case 106: cout << prefix << "hand_rook" << endl; break;
+	case 110: cout << prefix << "board_pawn" << endl; break;
+	case 111: cout << prefix << "board_lance" << endl; break;
+	case 112: cout << prefix << "board_knight" << endl; break;
+	case 113: cout << prefix << "board_silver" << endl; break;
+	case 114: cout << prefix << "board_gold(+promoted gold)" << endl; break;
+	case 115: cout << prefix << "board_bishop(+horse)" << endl; break;
+	case 116: cout << prefix << "board_rook(+dragon)" << endl; break;
+	case 120: cout << prefix << "pawn" << endl; break;
+	case 121: cout << prefix << "lance" << endl; break;
+	case 122: cout << prefix << "knight" << endl; break;
+	case 123: cout << prefix << "silver" << endl; break;
+	case 124: cout << prefix << "gold(+promoted gold)" << endl; break;
+	case 125: cout << prefix << "bishop(+horse)" << endl; break;
+	case 126: cout << prefix << "rook(+dragon)" << endl; break;
+	}
+}
+
+
 // "test evalmerge dir1 dir2 dir3 percent"
 void eval_merge(istringstream& is)
 {
@@ -1653,6 +1718,7 @@ void eval_merge(istringstream& is)
 		{
 			is >> merge_features;
 			cout << "merge features = " << merge_features << endl;
+			print_mix_the_piece(merge_features);
 		}
 	}
 
