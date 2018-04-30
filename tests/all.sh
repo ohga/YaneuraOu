@@ -10,25 +10,24 @@ echo "testing started"
 pwd
 
 echo "eval data downloading.."
-#wget http://garnet-alice.net/shogiengine/godwhale/client/download/GodwhaleClient_1_1_1_0_full.zip -O GodwhaleClient_1_1_1_0_full.zip > /dev/null 2>&1
 wget --load-cookies /tmp/cookies.txt \
-    `wget --keep-session-cookies --save-cookies=/tmp/cookies.txt \
-        'https://drive.google.com/uc?id=1FV6BX6tnDyJdCJt31jmCjRDLrqkuT8tH' -q -O - \
-            | perl -nle 'if($_=~/download-link.*?href="(.*?)"/i){$str=$1;$str=~s/&amp;/&/g;print "https://drive.google.com$str";}'` \
-                  -O GodwhaleClient_1_1_1_0_full.zip > /dev/null 2>&1
+  `wget --keep-session-cookies --save-cookies=/tmp/cookies.txt \
+    'https://drive.google.com/uc?id=1r4o85v6_wxQhIF4K7sAuCfuLzTxIJLJ-' -q -O - \
+    | perl -nle 'if($_=~/download-link.*?href="(.*?)"/i){$str=$1;$str=~s/&amp;/&/g;print "https://drive.google.com$str";}'` \
+      -O qzilla7.7z > /dev/null 2>&1
 if [ $? != 0 ]; then
   echo "testing failed(wget)"
   exit 1
 fi
 
 echo "eval data unzip.."
-unzip -o GodwhaleClient_1_1_1_0_full.zip > /dev/null 2>&1
+7z x qzilla7.7z
 if [ $? != 0 ]; then
-  echo "testing failed(unzip)"
+  echo "testing failed(7z x)"
   exit 1
 fi
 
-mv ./Engine/eval ./
+mv qzilla7 eval
 
 echo "loading eval.bin.."
 cat eval/*.bin > /dev/null 2>&1
