@@ -98,6 +98,9 @@ namespace Eval
 			{ 0x0000c8e89414b88 , "elmoqhapaq ver1.0"     } , // elmo-qhapaq version 1.0
 			{ 0x0000c8ac0b10c78 , "elmoqhapaq ver1.1"     } , // elmo-qhapaq version 1.1
 
+            { 0x0000d51b9031805 , "qzilla7"               } , // qzilla7
+            { 0x0000d4a2143da16 , "qzilla9"               } , // qzilla9
+
 			{ 0x0000c62cf4f6b91 , "relmo8"                } , // リゼロ評価関数epoch8とelmo(WCSC27)を1:1でブレンド
 			{ 0x0000c85005252ee , "yaselmo(20170705)"     } , // 野生の読み太(20170703)とelmo(WCSC27)を1:1でブレンド
             { 0x0000cdfb3ca11fc , "mafu(20171101)"        } , // マフさん作成評価関数
