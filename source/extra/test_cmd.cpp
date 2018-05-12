@@ -1512,8 +1512,10 @@ struct KPPT_reader
 					if (merge_features == -1 || merge_features == 3 || merge_features == 7)
 						(*kkp_)[k1][k2][p1][1] = (s32)(f((*kkp_)[k1][k2][p1][1], (*eval2.kkp_)[k1][k2][p1][1]));
 
-					if (is_mix_the_piece(merge_features, p1))
+					if (is_mix_the_piece(merge_features, p1)) {
+						(*kkp_)[k1][k2][p1][0] = (s32)(f((*kkp_)[k1][k2][p1][0], (*eval2.kkp_)[k1][k2][p1][0]));
 						(*kkp_)[k1][k2][p1][1] = (s32)(f((*kkp_)[k1][k2][p1][1], (*eval2.kkp_)[k1][k2][p1][1]));
+					}
 				}
 
 		for (auto k1 : SQ)
@@ -1526,8 +1528,10 @@ struct KPPT_reader
 					if (merge_features == -1 || merge_features == 5 || merge_features == 8)
 						(*kpp_)[k1][p1][p2][1] = (s16)(f((*kpp_)[k1][p1][p2][1], (*eval2.kpp_)[k1][p1][p2][1]));
 
-					if (is_mix_the_piece(merge_features, p1) || is_mix_the_piece(merge_features, p2))
+					if (is_mix_the_piece(merge_features, p1) || is_mix_the_piece(merge_features, p2)) {
+						(*kpp_)[k1][p1][p2][0] = (s16)(f((*kpp_)[k1][p1][p2][0], (*eval2.kpp_)[k1][p1][p2][0]));
 						(*kpp_)[k1][p1][p2][1] = (s16)(f((*kpp_)[k1][p1][p2][1], (*eval2.kpp_)[k1][p1][p2][1]));
+					}
 				}
 	}
 
