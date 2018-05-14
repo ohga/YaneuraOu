@@ -29,6 +29,19 @@ fi
 
 mv qzilla7 eval
 
+wget https://github.com/nodchip/tnk-/releases/download/wcsc28-2018-05-05/tnk-wcsc28-2018-05-05.7z -O tnk.7z > /dev/null 2>&1
+if [ $? != 0 ]; then
+  echo "testing failed(wget)"
+  exit 1
+fi
+
+echo "eval data unzip.."
+7z x tnk.7z
+if [ $? != 0 ]; then
+  echo "testing failed(7z x)"
+  exit 1
+fi
+
 echo "loading eval.bin.."
 cat eval/*.bin > /dev/null 2>&1
 
