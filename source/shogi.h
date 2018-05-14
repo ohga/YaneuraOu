@@ -8,7 +8,7 @@
 
 // 思考エンジンのバージョンとしてUSIプロトコルの"usi"コマンドに応答するときの文字列。
 // ただし、この値を数値として使用することがあるので数値化できる文字列にしておく必要がある。
-#define ENGINE_VERSION "4.80"
+#define ENGINE_VERSION "4.82"
 
 // --------------------
 // コンパイル時の設定
@@ -31,7 +31,7 @@
 
 #if !defined (USE_MAKEFILE)
 
-//#define YANEURAOU_2017_GOKU_ENGINE       // やねうら王2017(GOKU)   (完成2017/12/31) : 極やねうら王
+//#define YANEURAOU_2018_GOKU_ENGINE       // やねうら王2017(GOKU)   (完成2017/12/31) : 極やねうら王
 #define YANEURAOU_2018_OTAFUKU_ENGINE    // やねうら王2018 with お多福Lab。(開発中2018/01/01～)
 //#define MATE_ENGINE                      // 詰め将棋solverとしてリリースする場合。(開発中2017/05/06～)
 //#define HELP_MATE_ENGINE                 // 協力詰めsolverとしてリリースする場合。協力詰めの最長は49909手。「寿限無3」 cf. http://www.ne.jp/asahi/tetsu/toybox/kato/fbaka4.htm
@@ -192,17 +192,43 @@ constexpr bool is_ok(Square sq) { return SQ_ZERO <= sq && sq <= SQ_NB; }
 // sqが盤面の内側を指しているかを判定する。assert()などで使う用。玉は盤上にないときにSQ_NBを取るのでこの関数が必要。
 constexpr bool is_ok_plus1(Square sq) { return SQ_ZERO <= sq && sq < SQ_NB_PLUS1; }
 
-extern File SquareToFile[SQ_NB_PLUS1];
+// 与えられたSquareに対応する筋を返すテーブル。file_of()で用いる。
+constexpr File SquareToFile[SQ_NB_PLUS1] =
+{
+	FILE_1, FILE_1, FILE_1, FILE_1, FILE_1, FILE_1, FILE_1, FILE_1, FILE_1,
+	FILE_2, FILE_2, FILE_2, FILE_2, FILE_2, FILE_2, FILE_2, FILE_2, FILE_2,
+	FILE_3, FILE_3, FILE_3, FILE_3, FILE_3, FILE_3, FILE_3, FILE_3, FILE_3,
+	FILE_4, FILE_4, FILE_4, FILE_4, FILE_4, FILE_4, FILE_4, FILE_4, FILE_4,
+	FILE_5, FILE_5, FILE_5, FILE_5, FILE_5, FILE_5, FILE_5, FILE_5, FILE_5,
+	FILE_6, FILE_6, FILE_6, FILE_6, FILE_6, FILE_6, FILE_6, FILE_6, FILE_6,
+	FILE_7, FILE_7, FILE_7, FILE_7, FILE_7, FILE_7, FILE_7, FILE_7, FILE_7,
+	FILE_8, FILE_8, FILE_8, FILE_8, FILE_8, FILE_8, FILE_8, FILE_8, FILE_8,
+	FILE_9, FILE_9, FILE_9, FILE_9, FILE_9, FILE_9, FILE_9, FILE_9, FILE_9,
+	FILE_NB, // 玉が盤上にないときにこの位置に移動させることがあるので
+};
 
 // 与えられたSquareに対応する筋を返す。
 // →　行数は長くなるが速度面においてテーブルを用いる。
-constexpr File file_of(Square sq) { /* return (File)(sq / 9); */ /* ASSERT_LV2(is_ok(sq)); */ return SquareToFile[sq]; }
+constexpr File file_of(Square sq) { /* return (File)(sq / 9); */ /*ASSERT_LV2(is_ok(sq));*/ return SquareToFile[sq]; }
 
-extern Rank SquareToRank[SQ_NB_PLUS1];
+// 与えられたSquareに対応する段を返すテーブル。rank_of()で用いる。
+constexpr Rank SquareToRank[SQ_NB_PLUS1] =
+{
+	RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, RANK_9,
+	RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, RANK_9,
+	RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, RANK_9,
+	RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, RANK_9,
+	RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, RANK_9,
+	RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, RANK_9,
+	RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, RANK_9,
+	RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, RANK_9,
+	RANK_1, RANK_2, RANK_3, RANK_4, RANK_5, RANK_6, RANK_7, RANK_8, RANK_9,
+	RANK_NB, // 玉が盤上にないときにこの位置に移動させることがあるので
+};
 
 // 与えられたSquareに対応する段を返す。
 // →　行数は長くなるが速度面においてテーブルを用いる。
-constexpr Rank rank_of(Square sq) { /* return (Rank)(sq % 9); */ /* ASSERT_LV2(is_ok(sq));*/ return SquareToRank[sq]; }
+constexpr Rank rank_of(Square sq) { /* return (Rank)(sq % 9); */ /*ASSERT_LV2(is_ok(sq));*/ return SquareToRank[sq]; }
 
 // 筋(File)と段(Rank)から、それに対応する升(Square)を返す。
 constexpr Square operator | (File f, Rank r) { Square sq = (Square)(f * 9 + r); /* ASSERT_LV2(is_ok(sq));*/ return sq; }
@@ -212,7 +238,7 @@ constexpr int dist(Square sq1, Square sq2) { return (!is_ok(sq1) || !is_ok(sq2))
 
 // 移動元、もしくは移動先の升sqを与えたときに、そこが成れるかどうかを判定する。
 constexpr bool canPromote(const Color c, const Square fromOrTo) {
-	// ASSERT_LV2(is_ok(fromOrTo));
+	ASSERT_LV2(is_ok(fromOrTo));
 	return canPromote(c, rank_of(fromOrTo));
 }
 
@@ -331,7 +357,7 @@ namespace Effect8
 	constexpr bool is_ok(Direct d) { return DIRECT_ZERO <= d && d < DIRECT_NB_PLUS4; }
 
 	// DirectをSquareWithWall型の差分値で表現したもの。
-	const SquareWithWall DirectToDeltaWW_[DIRECT_NB] = { SQWW_RU,SQWW_R,SQWW_RD,SQWW_U,SQWW_D,SQWW_LU,SQWW_L,SQWW_LD, };
+	constexpr SquareWithWall DirectToDeltaWW_[DIRECT_NB] = { SQWW_RU,SQWW_R,SQWW_RD,SQWW_U,SQWW_D,SQWW_LU,SQWW_L,SQWW_LD, };
 	constexpr SquareWithWall DirectToDeltaWW(Direct d) { /* ASSERT_LV3(is_ok(d)); */ return DirectToDeltaWW_[d]; }
 }
 
@@ -341,8 +367,8 @@ namespace Effect8
 // ただし玉はsq3として、sq1,sq2は同じ側にいるものとする。(玉を挟んでの一直線は一直線とはみなさない)
 constexpr bool aligned(Square sq1, Square sq2, Square sq3/* is ksq */)
 {
-  auto d1 = Effect8::directions_of(sq1, sq3);
-  return d1 ? d1 == Effect8::directions_of(sq2, sq3) : false;
+	auto d1 = Effect8::directions_of(sq1, sq3);
+	return d1 ? d1 == Effect8::directions_of(sq2, sq3) : false;
 }
 
 // --------------------
@@ -467,6 +493,7 @@ enum Piece : uint32_t
 	// --- 特殊な定数
 
 	PIECE_PROMOTE = 8, // 成り駒と非成り駒との差(この定数を足すと成り駒になる)
+	PIECE_TYPE_NB = 16,// 駒種の数。(成りを含める)
 	PIECE_WHITE = 16,  // これを先手の駒に加算すると後手の駒になる。
 	PIECE_RAW_NB = 8,  // 非成駒の終端
 
@@ -647,7 +674,7 @@ struct ExtMove {
 	// 望まない暗黙のMoveへの変換を禁止するために
 	// 曖昧な変換でコンパイルエラーになるようにしておく。
 	// cf. Fix involuntary conversions of ExtMove to Move : https://github.com/official-stockfish/Stockfish/commit/d482e3a8905ee194bda3f67a21dda5132c21f30b
-	operator float() const;
+	operator float() const = delete;
 };
 
 // ExtMoveの並べ替えを行なうので比較オペレーターを定義しておく。
@@ -867,7 +894,7 @@ std::ostream& operator<<(std::ostream& os, RepetitionState rs);
 
 // 引き分け時のスコア
 extern Value drawValueTable[REPETITION_NB][COLOR_NB];
-constexpr Value draw_value(RepetitionState rs, Color c) { /* ASSERT_LV3(is_ok(rs)); */ return drawValueTable[rs][c]; }
+inline Value draw_value(RepetitionState rs, Color c) { /* ASSERT_LV3(is_ok(rs)); */ return drawValueTable[rs][c]; }
 
 // --------------------
 //      評価関数
