@@ -4,6 +4,8 @@ environment:
   matrix:
     - TARGET: tournament
     - TARGET: tournament-sse42
+    - TARGET: tournament-nnue
+    - TARGET: tournament-nnue-sse42
     - TARGET: evalmerge
 
 install:
