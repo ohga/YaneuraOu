@@ -243,7 +243,7 @@ namespace YaneuraOu2017GOKU
 	EasyMoveManager EasyMove;
 
 	template <NodeType NT>
-	Value search(Position& pos, Stack* ss, Value alpha, Value beta, Depth depth, bool cutNode, bool skipEarlyPruning);
+	Value search(Position& pos, Stack* ss, Value alpha, Value beta, Depth depth, bool cutNode);
 
 	template <NodeType NT, bool InCheck>
 	Value qsearch(Position& pos, Stack* ss, Value alpha, Value beta, Depth depth = DEPTH_ZERO);
@@ -724,7 +724,7 @@ namespace YaneuraOu2017GOKU
 
 	// cutNode = LMRで悪そうな指し手に対してreduction量を増やすnode
 	template <NodeType NT>
-	Value search(Position& pos, Stack* ss, Value alpha, Value beta, Depth depth, bool cutNode, bool skipEarlyPruning)
+	Value search(Position& pos, Stack* ss, Value alpha, Value beta, Depth depth, bool cutNode)
 	{
 		// -----------------------
 		//     nodeの種類
@@ -1119,7 +1119,7 @@ namespace YaneuraOu2017GOKU
 		improving = ss->staticEval >= (ss-2)->staticEval || (ss-2)->staticEval == VALUE_NONE;
 
 		// このnodeで指し手生成前の枝刈りを省略するなら指し手生成ループへ。
-		if (skipEarlyPruning)
+		if (ss->excludedMove)
 			goto moves_loop;
 
 		// -----------------------
@@ -1194,7 +1194,7 @@ namespace YaneuraOu2017GOKU
 
 			//  王手がかかっているときはここに来ていないのでqsearchはinCheck == falseのほうを呼ぶ。
 			Value nullValue = depth - R < ONE_PLY ? -qsearch<NonPV, false>(pos, ss + 1, -beta, -beta + 1)
-												  : - search<NonPV       >(pos, ss + 1, -beta, -beta + 1, depth - R, !cutNode,true);
+												  : - search<NonPV       >(pos, ss + 1, -beta, -beta + 1, depth - R, !cutNode);
 			pos.undo_null_move();
 
 			if (nullValue >= beta)
@@ -1215,7 +1215,7 @@ namespace YaneuraOu2017GOKU
 
 				// nullMoveせずに(現在のnodeと同じ手番で)同じ深さで探索しなおして本当にbetaを超えるか検証する。cutNodeにしない。
 				Value v = depth - R < ONE_PLY ? qsearch<NonPV, false>(pos, ss, beta - 1, beta)
-											  :  search<NonPV       >(pos, ss, beta - 1, beta, depth - R, false , true);
+											  :  search<NonPV       >(pos, ss, beta - 1, beta, depth - R, false);
 
 				thisThread->nmp_odd = thisThread->nmp_ply = 0;
 
@@ -1244,7 +1244,6 @@ namespace YaneuraOu2017GOKU
 			Depth rdepth = depth - (PARAM_PROBCUT_DEPTH - 1) * ONE_PLY;
 
 			ASSERT_LV3(rdepth >= ONE_PLY);
-			ASSERT_LV3(is_ok((ss - 1)->currentMove));
 
 			// rbeta - ss->staticEvalを上回るcaptureの指し手のみを生成。
 			MovePicker mp(pos, ttMove, rbeta - ss->staticEval);
@@ -1267,11 +1266,11 @@ namespace YaneuraOu2017GOKU
 					// Perform a preliminary depth one search to verify that the move holds. We will only do
 					// this search if the depth is not five, thus avoiding two depth one searches in a row
 					if (depth > 5 * ONE_PLY)
-					    value = -search<NonPV>(pos, ss+1, -rbeta, -rbeta+1, ONE_PLY, !cutNode, true);
+					    value = -search<NonPV>(pos, ss+1, -rbeta, -rbeta+1, ONE_PLY, !cutNode);
 
 					// If the first search was skipped or was performed and held, perform the regular search
 					if (depth == 5 * ONE_PLY || value >= rbeta)
-					    value = -search<NonPV>(pos, ss+1, -rbeta, -rbeta+1, depth - 4 * ONE_PLY, !cutNode, false);
+					    value = -search<NonPV>(pos, ss+1, -rbeta, -rbeta+1, depth - 4 * ONE_PLY, !cutNode);
 
 					pos.undo_move(move);
 					if (value >= rbeta)
@@ -1294,7 +1293,7 @@ namespace YaneuraOu2017GOKU
 			&& !ttMove)
 		{
 			Depth d = (3 * depth / (4 * ONE_PLY) - 2) * ONE_PLY;
-			search<NT>(pos, ss, alpha, beta, d , cutNode,true);
+			search<NT>(pos, ss, alpha, beta, d , cutNode);
 
 			tte = TT.probe(posKey, ttHit
 #if defined(USE_GLOBAL_OPTIONS)
@@ -1506,7 +1505,7 @@ namespace YaneuraOu2017GOKU
 				ss->excludedMove = move;
 				// 局面はdo_move()で進めずにこのnodeから浅い探索深さで探索しなおす。
 				// 浅いdepthでnull windowなので、すぐに探索は終わるはず。
-				value = search<NonPV>(pos, ss, rBeta - 1, rBeta, d, cutNode , true);
+				value = search<NonPV>(pos, ss, rBeta - 1, rBeta, d, cutNode);
 				ss->excludedMove = MOVE_NONE;
 
 				// 置換表の指し手以外がすべてfail lowしているならsingular延長確定。
@@ -1764,7 +1763,7 @@ namespace YaneuraOu2017GOKU
 				// moveCount > 1 すなわち、このnodeの2手目以降なのでsearch<NonPv>が呼び出されるべき。
 				Depth d = std::max(newDepth - r, ONE_PLY);
 
-				value = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha, d, true, false);
+				value = -search<NonPV>(pos, ss + 1, -(alpha + 1), -alpha, d, true);
 
 				//
 				// ここにその他の枝刈り、何か入れるべき(かも)
@@ -1791,7 +1790,7 @@ namespace YaneuraOu2017GOKU
 				value = newDepth < ONE_PLY ?
 					givesCheck ? -qsearch<NonPV,  true>(pos, ss + 1, -(alpha + 1), -alpha)
 							   : -qsearch<NonPV, false>(pos, ss + 1, -(alpha + 1), -alpha)
-							   :  -search<NonPV       >(pos, ss + 1, -(alpha + 1), -alpha, newDepth, !cutNode , false);
+							   :  -search<NonPV       >(pos, ss + 1, -(alpha + 1), -alpha, newDepth, !cutNode);
 
 			// PV nodeにおいては、full depth searchがfail highしたならPV nodeとしてsearchしなおす。
 			// ただし、value >= betaなら、正確な値を求めることにはあまり意味がないので、これはせずにbeta cutしてしまう。
@@ -1805,7 +1804,7 @@ namespace YaneuraOu2017GOKU
 				value = newDepth < ONE_PLY  ?
 								givesCheck  ? -qsearch<PV,  true>(pos, ss + 1, -beta, -alpha)
 											: -qsearch<PV, false>(pos, ss + 1, -beta, -alpha)
-											: - search<PV       >(pos, ss + 1, -beta, -alpha, newDepth, false , false);
+											: - search<PV       >(pos, ss + 1, -beta, -alpha, newDepth, false);
 
 			}
 
@@ -2455,7 +2454,7 @@ void Thread::search()
 
 			while (true)
 			{
-				bestValue = YaneuraOu2017GOKU::search<PV>(rootPos, ss, alpha, beta, rootDepth, false, false);
+				bestValue = YaneuraOu2017GOKU::search<PV>(rootPos, ss, alpha, beta, rootDepth, false);
 
 				// それぞれの指し手に対するスコアリングが終わったので並べ替えおく。
 				// 一つ目の指し手以外は-VALUE_INFINITEが返る仕様なので並べ替えのために安定ソートを
