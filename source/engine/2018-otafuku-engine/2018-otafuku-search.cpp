@@ -1116,8 +1116,6 @@ namespace YaneuraOu2017GOKU
 			// 実行したという証にはなるので意味がある。
 		}
 
-		improving = ss->staticEval >= (ss-2)->staticEval || (ss-2)->staticEval == VALUE_NONE;
-
 		// このnodeで指し手生成前の枝刈りを省略するなら指し手生成ループへ。
 		if (ss->excludedMove)
 			goto moves_loop;
@@ -1157,7 +1155,7 @@ namespace YaneuraOu2017GOKU
 		// ただし、将棋の終盤では評価値の変動の幅は大きくなっていくので、進行度に応じたfutility_marginが必要となる。
 		// ここでは進行度としてgamePly()を用いる。このへんはあとで調整すべき。
 
-    
+		improving =   ss->staticEval >= (ss-2)->staticEval || (ss-2)->staticEval == VALUE_NONE;
 
 		if (   !RootNode
 			&&  depth < PARAM_FUTILITY_RETURN_DEPTH * ONE_PLY
@@ -1178,6 +1176,7 @@ namespace YaneuraOu2017GOKU
 		if (   !PvNode
 			&&  eval >= beta
 			&& (ss->staticEval >= beta - PARAM_NULL_MOVE_MARGIN * (depth / ONE_PLY - 6) || depth >= 13 * ONE_PLY)
+			&& !ss->excludedMove
 			&& (ss->ply >= thisThread->nmp_ply || ss->ply % 2 != thisThread->nmp_odd)
 			)
 		{
