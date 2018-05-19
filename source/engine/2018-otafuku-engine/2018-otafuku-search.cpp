@@ -1174,6 +1174,8 @@ namespace YaneuraOu2017GOKU
 
 		//  evalの見積りがbetaを超えているので1手パスしてもbetaは超えそう。
 		if (   !PvNode
+			&& (ss-1)->currentMove != MOVE_NULL
+			&& (ss-1)->statScore < 30000
 			&&  eval >= beta
 			&& (ss->staticEval >= beta - PARAM_NULL_MOVE_MARGIN * (depth / ONE_PLY - 6) || depth >= 13 * ONE_PLY)
 			&& !ss->excludedMove
