@@ -1142,6 +1142,8 @@ namespace YaneuraOu2017GOKU
 		{
 			Value ralpha = alpha - Value((depth != ONE_PLY) * RazorMargin[depth / ONE_PLY]);
 			Value v = qsearch<NonPV, false>(pos, ss, ralpha, ralpha+1);
+			if (depth < 2 * ONE_PLY || v <= ralpha)
+				return v;
 		}
 
 		// -----------------------
