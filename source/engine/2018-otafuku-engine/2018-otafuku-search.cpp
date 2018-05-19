@@ -1178,7 +1178,7 @@ namespace YaneuraOu2017GOKU
 			&& (ss-1)->statScore < 22500
 			&&  eval >= beta
 			&& (ss->staticEval >= beta - PARAM_NULL_MOVE_MARGIN * (depth / ONE_PLY - 6) || depth >= 13 * ONE_PLY)
-			&& !ss->excludedMove
+			&& !excludedMove
 			&& (ss->ply >= thisThread->nmp_ply || ss->ply % 2 != thisThread->nmp_odd)
 			)
 		{
@@ -1961,7 +1961,7 @@ namespace YaneuraOu2017GOKU
 
 		// 【計測資料 15.】search()でfail lowしているときにhistoryのupdateを行なう条件
 
-		else if (   depth >= 3 * ONE_PLY
+		else if (   (depth >= 3 * ONE_PLY || PvNode)
 				&& !pos.captured_piece()
 				&& is_ok((ss - 1)->currentMove))
 			update_continuation_histories(ss - 1, pos.moved_piece_after((ss - 1)->currentMove), prevSq, stat_bonus(depth));
