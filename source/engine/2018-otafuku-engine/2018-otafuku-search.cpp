@@ -1209,7 +1209,7 @@ namespace YaneuraOu2017GOKU
 				if (nullValue >= VALUE_MATE_IN_MAX_PLY)
 					nullValue = beta;
 
-				if (abs(beta) < VALUE_KNOWN_WIN && (depth < PARAM_NULL_MOVE_RETURN_DEPTH * ONE_PLY || thisThread->nmp_min_ply))
+				if (thisThread->nmp_min_ply || (abs(beta) < VALUE_KNOWN_WIN && depth < PARAM_NULL_MOVE_RETURN_DEPTH * ONE_PLY))
 					return nullValue;
 
 				// disable null move pruning for side to move for the first part of the remaining search tree
