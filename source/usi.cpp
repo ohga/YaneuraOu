@@ -741,7 +741,7 @@ void go_cmd(const Position& pos, istringstream& is , StateListPtr& states) {
 			if (token == "infinite")
 				limits.mate = INT32_MAX;
 			else
-				limits.mate = stoi(token);;
+				limits.mate = stoi(token);
 		}
 
 		// 時間無制限。
@@ -817,7 +817,7 @@ void USI::loop(int argc, char* argv[])
 
 	// 局面を遡るためのStateInfoのlist。
 	StateListPtr states(new StateList(1));
-	
+
 	// 先行入力されているコマンド
 	// コマンドは前から取り出すのでqueueを用いる。
 	queue<string> cmds;
