@@ -1,8 +1,10 @@
 # > Select YaneuraOu edition below.
 
-YANEURAOU_EDITION = YANEURAOU_2018_OTAFUKU_ENGINE
+#YANEURAOU_EDITION = YANEURAOU_2018_OTAFUKU_ENGINE
 #YANEURAOU_EDITION = HELP_MATE_ENGINE
 #YANEURAOU_EDITION = MATE_ENGINE
+#YANEURAOU_EDITION = YANEURAOU_2018_GOKU_ENGINE
+YANEURAOU_EDITION = YANEURAOU_2018_TNK_ENGINE
 
 
 # clangでコンパイルしたほうがgccより数%速いっぽい。
@@ -10,6 +12,7 @@ YANEURAOU_EDITION = YANEURAOU_2018_OTAFUKU_ENGINE
 COMPILER = clang++
 
 # 標準的なコンパイルオプション
+#CFLAGS   = -std=c++14 -fno-exceptions -fno-rtti -Wextra -O0 -ggdb -MMD -MP -fpermissive
 CFLAGS   = -std=c++14 -fno-exceptions -fno-rtti -Wextra -Ofast -MMD -MP -fpermissive
 WCFLAGS  =
 LDFLAGS  =
@@ -81,7 +84,8 @@ ifeq ($(findstring clang++,$(COMPILER)),clang++)
 endif
 
 CFLAGS += -DNO_EXCEPTIONS
-LDFLAGS += -lpthread -lboost_system
+LDFLAGS += -lpthread -lboost_system -lopenblas
+#LDFLAGS += -lpthread -lboost_system
 LDFLAGS += -v
 
 OBJDIR   = ../obj
@@ -142,6 +146,15 @@ ifeq ($(YANEURAOU_EDITION),MATE_ENGINE)
 	SOURCES += engine/mate-engine/mate-search.cpp
 endif
 
+ifeq ($(YANEURAOU_EDITION),YANEURAOU_2018_TNK_ENGINE)
+	SOURCES += eval/nnue/evaluate_nnue.cpp                                     \
+	           eval/nnue/evaluate_nnue_learner.cpp                             \
+	           eval/nnue/nnue_test_command.cpp                                 \
+	           eval/nnue/features/k.cpp                                        \
+	           eval/nnue/features/p.cpp                                        \
+	           eval/nnue/features/half_kp.cpp                                  \
+	           eval/nnue/features/half_relative_kp.cpp
+endif
 
 OBJECTS  = $(addprefix $(OBJDIR)/, $(SOURCES:.cpp=.o))
 DEPENDS  = $(OBJECTS:.o=.d)
@@ -157,17 +170,17 @@ all: clean $(TARGET)
 
 # 学習用バイナリのときは、openmpを有効にする。
 evallearn:
-	$(MAKE) CFLAGS='$(CFLAGS) $(OPENMP) -DNDEBUG -DUSE_MAKEFILE -D$(YANEURAOU_EDITION) -DUSE_AVX2 -mbmi2 -mavx2 -march=corei7-avx' LDFLAGS='$(LDFLAGS) $(OPENMP_LDFLAGS) $(LTOFLAGS)' $(TARGET)
+	$(MAKE) CFLAGS='$(CFLAGS) $(OPENMP) -DUSE_BLAS -DNDEBUG -DUSE_MAKEFILE -D$(YANEURAOU_EDITION) -DUSE_AVX2 -mbmi -mbmi2 -mavx2 -march=corei7-avx' LDFLAGS='$(LDFLAGS) $(OPENMP_LDFLAGS) $(LTOFLAGS)' $(TARGET)
 evallearn-sse42:
 	$(MAKE) CFLAGS='$(CFLAGS) $(OPENMP) -DNDEBUG -DUSE_MAKEFILE -D$(YANEURAOU_EDITION) -DUSE_SSE42 -msse4.2 -march=corei7' LDFLAGS='$(LDFLAGS) $(OPENMP_LDFLAGS) $(LTOFLAGS)' $(TARGET)
 
 tournament:
-	$(MAKE) CFLAGS='$(CFLAGS) -DNDEBUG -DUSE_MAKEFILE -D$(YANEURAOU_EDITION) -DUSE_AVX2 -mbmi2 -mavx2 -DFOR_TOURNAMENT -march=corei7-avx' LDFLAGS='$(LDFLAGS) $(LTOFLAGS)' $(TARGET)
+	$(MAKE) CFLAGS='$(CFLAGS) -DNDEBUG -DUSE_MAKEFILE -D$(YANEURAOU_EDITION) -DUSE_AVX2 -mbmi -mbmi2 -mavx2 -DFOR_TOURNAMENT -march=corei7-avx' LDFLAGS='$(LDFLAGS) $(LTOFLAGS)' $(TARGET)
 tournament-sse42:
 	$(MAKE) CFLAGS='$(CFLAGS) -DNDEBUG -DUSE_MAKEFILE -D$(YANEURAOU_EDITION) -DUSE_SSE42 -msse4.2 -DFOR_TOURNAMENT -march=corei7' LDFLAGS='$(LDFLAGS) $(LTOFLAGS)' $(TARGET)
 
 avx2:
-	$(MAKE) CFLAGS='$(CFLAGS) -DNDEBUG -DUSE_MAKEFILE -D$(YANEURAOU_EDITION) -DUSE_AVX2 -mbmi2 -mavx2 -march=corei7-avx' LDFLAGS='$(LDFLAGS) $(LTOFLAGS)' $(TARGET)
+	$(MAKE) CFLAGS='$(CFLAGS) -DNDEBUG -DUSE_MAKEFILE -D$(YANEURAOU_EDITION) -DUSE_AVX2 -mbmi -mbmi2 -mavx2 -march=corei7-avx' LDFLAGS='$(LDFLAGS) $(LTOFLAGS)' $(TARGET)
 
 sse42:
 	$(MAKE) CFLAGS='$(CFLAGS) -DNDEBUG -DUSE_MAKEFILE -D$(YANEURAOU_EDITION) -DUSE_SSE42 -msse4.2 -march=corei7' LDFLAGS='$(LDFLAGS) $(LTOFLAGS)' $(TARGET)

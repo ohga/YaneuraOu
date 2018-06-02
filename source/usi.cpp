@@ -176,7 +176,7 @@ namespace USI
 #if defined(GODWHALE_CLUSTER_SLAVE)
                 << (IsGodwhaleMode ? " id " + std::to_string(pos.id) : "")
 #endif
-				<< " depth "    << d
+				<< " depth "    << d / ONE_PLY
 				<< " seldepth " << rootMoves[i].selDepth
 				<< " score "    << USI::score_to_usi(v);
 
@@ -741,7 +741,7 @@ void go_cmd(const Position& pos, istringstream& is , StateListPtr& states) {
 			if (token == "infinite")
 				limits.mate = INT32_MAX;
 			else
-				is >> limits.mate;
+				limits.mate = stoi(token);
 		}
 
 		// 時間無制限。
@@ -817,7 +817,7 @@ void USI::loop(int argc, char* argv[])
 
 	// 局面を遡るためのStateInfoのlist。
 	StateListPtr states(new StateList(1));
-	
+
 	// 先行入力されているコマンド
 	// コマンドは前から取り出すのでqueueを用いる。
 	queue<string> cmds;

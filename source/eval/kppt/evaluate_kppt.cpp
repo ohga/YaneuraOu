@@ -670,7 +670,8 @@ namespace Eval
 				
 				__m256i zero = _mm256_setzero_si256();
 				__m256i diffp1 = zero;
-				#pragma unroll
+
+				//#pragma unroll
 				for (int i = 0; i < length ; ++i)
 				{
 					// KKPの値は、後手側から見た計算だとややこしいので、先手から見た計算でやる。
@@ -765,7 +766,7 @@ namespace Eval
 				__m256i zero = _mm256_setzero_si256();
 				__m256i diffp0 = zero;
 
-				#pragma unroll
+				//#pragma unroll
 				for (int i = 0; i < length; ++i)
 				{
 					const int k0 = list0[i];

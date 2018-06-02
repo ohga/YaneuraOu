@@ -2,18 +2,22 @@ cmake_minimum_required(VERSION 2.8)
 
 set(CMAKE_CXX_COMPILER "clang++")
 add_definitions("-std=c++14 -fno-exceptions -fno-rtti -Wextra -Ofast -MMD -MP")
-add_definitions("-Wno-unused-parameter -D_LINUX -DGODWHALE_CLUSTER_SLAVE -DUSE_CMAKE")
+add_definitions("-Wno-unused-parameter -D_LINUX -DGODWHALE_CLUSTER_SLAVE -DUSE_CMAKE -DUSE_MAKEFILE")
 set(CMAKE_EXE_LINKER_FLAGS "-v")
 
 if(NOT DEFINED target)
    set(target "tournament")
 endif()
 if(target STREQUAL tournament)
-  add_definitions("-DNDEBUG -DUSE_AVX2 -mbmi2 -mavx2 -DFOR_TOURNAMENT -march=corei7-avx")
+  add_definitions("-DNDEBUG -DUSE_AVX2 -DYANEURAOU_2018_OTAFUKU_ENGINE -mbmi -mbmi2 -mavx2 -DFOR_TOURNAMENT -march=corei7-avx")
 elseif(target STREQUAL tournament-sse42)
-  add_definitions("-DNDEBUG -DUSE_SSE42 -msse4.2 -DFOR_TOURNAMENT -march=corei7")
+  add_definitions("-DNDEBUG -DUSE_SSE42 -DYANEURAOU_2018_OTAFUKU_ENGINE -msse4.2 -DFOR_TOURNAMENT -march=corei7")
 elseif(target STREQUAL evalmerge)
-  add_definitions("-DNDEBUG -DUSE_SSE42 -msse4.2 -march=corei7")
+  add_definitions("-DNDEBUG -DUSE_SSE42 -DYANEURAOU_2018_OTAFUKU_ENGINE -msse4.2 -march=corei7")
+elseif(target STREQUAL tournament-nnue)
+  add_definitions("-DNDEBUG -DUSE_AVX2 -DYANEURAOU_2018_TNK_ENGINE -mbmi -mbmi2 -mavx2 -DFOR_TOURNAMENT -march=corei7-avx")
+elseif(target STREQUAL tournament-nnue-sse42)
+  add_definitions("-DNDEBUG -DUSE_SSE42 -DYANEURAOU_2018_TNK_ENGINE -msse4.2 -DFOR_TOURNAMENT -march=corei7")
 elseif(DEFINED target)
   message(FATAL_ERROR "invalid target")
 endif()
@@ -62,6 +66,13 @@ set(sources
 	eval/kkppt/evaluate_kkppt_learner.cpp
 	eval/kpp_kkpt_fv_var/evaluate_kpp_kkpt_fv_var.cpp
 	eval/kpp_kkpt_fv_var/evaluate_kpp_kkpt_fv_var_learner.cpp
+  eval/nnue/evaluate_nnue.cpp
+  eval/nnue/evaluate_nnue_learner.cpp
+  eval/nnue/nnue_test_command.cpp
+  eval/nnue/features/k.cpp
+  eval/nnue/features/p.cpp
+  eval/nnue/features/half_kp.cpp
+  eval/nnue/features/half_relative_kp.cpp
 	eval/evaluate.cpp
 	eval/evaluate_io.cpp
 	eval/evaluate_mir_inv_tools.cpp
