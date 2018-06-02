@@ -1295,8 +1295,7 @@ namespace YaneuraOu2017GOKU
 		if (depth >= 8 * ONE_PLY
 			&& !ttMove)
 		{
-			Depth d = (3 * depth / (4 * ONE_PLY) - 2) * ONE_PLY;
-			search<NT>(pos, ss, alpha, beta, d , cutNode);
+			search<NT>(pos, ss, alpha, beta, depth - 7 * ONE_PLY, cutNode);
 
 			tte = TT.probe(posKey, ttHit
 #if defined(USE_GLOBAL_OPTIONS)
